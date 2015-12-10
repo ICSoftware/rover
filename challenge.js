@@ -10,26 +10,33 @@ window.onload = function () {
         // genworld expects an input object in the form { 'bounds': [3, 8], 'robos': [{x: 2, y: 1, o: 'W', command: 'rlrlff'}]}
         // where bounds represents the top right corner of the plane and each robos object represents the
         // x,y coordinates of a robot and o is a string representing their orientation. a sample object is provided below
-        var parsed = {
-            bounds: [20, 20],
-            robos: [{
-                x: 2,
-                y: 1,
-                o: 'W',
-                command: 'rlrlrff'
-            }, {
-                x: 12,
-                y: 10,
-                o: 'E',
-                command: 'fffffffffff'
-            }, {
-                x: 18,
-                y: 8,
-                o: 'N',
-                command: 'frlrlrlr'
-            }]
-        };
-        return parsed;
+		var cmdArray = input.split('\n');
+		console.log(cmdArray);
+		var bounds = cmdArray.shift().trim().split(' ');
+		var robots = new Array(),
+			cmdLine = new Array();
+		var x,y,o, cmd = '';
+		//ensuring even number of lines (2 per robot)
+		if(cmdArray.length % 2) {
+			alert('invalid number of command');
+			return;
+		}
+		while(cmdArray.length) {
+			cmdLine = cmdArray.shift().trim().split(' ');
+			
+			//ensure that command line has all 3 parts: x, y, o
+			if(cmdLine.length < 3) {
+				alert('invalid command: ' + cmdLine);
+				break;
+			}
+			x = cmdLine[0];
+			y = cmdLine[1];
+			o = cmdLine[2];
+			cmd = cmdArray.shift().trim();
+			robots.push({'x':x, 'y': y, 'o': o, 'command': cmd});
+		}
+		
+        return {'bounds':bounds, 'robos': robots};
     };
     // this function replaces teh robos after they complete one instruction
     // from their commandset
