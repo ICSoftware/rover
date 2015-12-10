@@ -1,36 +1,49 @@
 'use strict';
 window.onload = function () {
     var command =
-        '5 3 \n 1 1 e\n rfrfrfrf\n 3 2 N \n frrffllffrrfll\n 0 3 w\n LLFFFLFLFL';
+        '10 5 \n 1 1 e\n rfrfrfrf\n 3 2 N \n frrffllllfffffffffrrfll\n 0 3 w\n LLFFFLFLFL';
     // this function parses the input string so that we have useful names/parameters
     // to define the playfield and the robots for subsequent steps
+
+    const DEAD = "!";
+    var bounds = [],
+        fallen = [];
+
     var parseInput = function (input) {
         // task #1 
         // replace the 'parsed' var below to be the string 'command' parsed into an object we can pass to genworld();
         // genworld expects an input object in the form { 'bounds': [3, 8], 'robos': [{x: 2, y: 1, o: 'W', command: 'rlrlff'}]}
         // where bounds represents the top right corner of the plane and each robos object represents the
         // x,y coordinates of a robot and o is a string representing their orientation. a sample object is provided below
-        var parsed = {
-            bounds: [20, 20],
-            robos: [{
-                x: 2,
-                y: 1,
-                o: 'W',
-                command: 'rlrlrff'
-            }, {
-                x: 12,
-                y: 10,
-                o: 'E',
-                command: 'fffffffffff'
-            }, {
-                x: 18,
-                y: 8,
-                o: 'N',
-                command: 'frlrlrlr'
-            }]
+        var raw = input.split("\n");
+        var parsed = { 
+            bounds: [],
+            robos: []
         };
+
+        for(var i = 0; i < raw.length; i++){
+            if(i === 0){ //parse bounds
+                var bounds = stringToArray(raw[i]).map(Number);
+                 parsed.bounds = bounds;
+            }else{
+                if(i % 2 == 1){
+                    var coords = stringToArray(raw[i]);
+                    // Odd (coords)
+                    parsed.robos.push({x: parseInt(coords[0]), y: parseInt(coords[1]), o: coords[2].toLowerCase()});
+                }else if(i % 2 == 0){
+                    // Even (command)
+                    parsed.robos[parsed.robos.length-1].command = raw[i].trim().toLowerCase().split('');
+                }
+            }
+        }
         return parsed;
     };
+
+    function stringToArray(value)
+    {
+        return value.trim().toLowerCase().split(' ');
+    }
+
     // this function replaces teh robos after they complete one instruction
     // from their commandset
     var tickRobos = function (robos) {
@@ -49,15 +62,119 @@ window.onload = function () {
         // of its commandset–encounters this 'scent', it should refuse any commands that would
         // cause it to leave the playfield.
 
+        var commandCount = 0;
         // !== write robot logic here ==!
+        for(var i = 0; i < robos.length; i++){
+            var data = robos[i];
+            if(data.command.length > 0){
+                var dir = data.command.splice(0, 1)[0];
+                commandCount++;
+                // Get new position and direction
+                var updated = getProjected(data.o, {x: data.x, y: data.y}, dir);
+                
+                // Check if it is in bounds
+                if(isOutOfBounds({x: updated.x, y:updated.y}) == false){
+                    robos[i] = updated;
+                    robos[i].command = data.command;    
+                }else{
+                    var match = false;
+                    for(var j = 0; j < fallen.length; j++){
+                        var f = fallen[j];
+                        if(f.x === updated.x && f.y === updated.y){
+                            // This position has been encountered before, ignore this command
+                            match = true;
+                            break;
+                        }
+                    }
 
-        //leave the below line in place
-        placeRobos(robos);
+                    if(!match){
+                        // This is a new, unknown edge.  Kill the soldier and leave
+                        // obituary.
+                        console.log("out of bounds");
+                        robos[i].command = [];
+                        robos[i].o = DEAD;
+                        fallen.push(robos[i]);
+                    }
+                    else
+                    {
+                        // Update command only
+                        robos[i].command = data.command; 
+                    }
+                    
+                }
+            }
+        };
+
+        if(commandCount > 0){
+            //leave the below line in place
+            placeRobos(robos);
+        } else {
+            // We are done, summarize mission
+            console.log("Complete!");
+            missionSummary(robos);
+        }
+ 
     };
+
+    // Given an orientation, return modified x,y coords by 1
+    var getProjected = function(orientation, point, direction){
+        
+        var y = point.y;
+        var x = point.x;
+        var o = orientation;
+        
+        if(direction === 'f'){
+            x += orientation === 'e' ? 1 : (orientation === 'w' ? -1 : 0);
+            y += orientation === 'n' ? -1 : (orientation === 's' ? 1 : 0);
+        }else{ 
+            // get new orientation
+            var ordinals = ['n','e','s','w'];
+            var index = ordinals.indexOf(orientation);
+            if(direction === 'r'){
+                // Turn right
+                o = ordinals[(index + 1) <= 3 ? index + 1 : 0];
+            } else if(direction === 'l'){
+                // Turn left
+                o = ordinals[(index - 1) >= 0 ? index - 1 : 3];
+            }           
+        }
+
+        return {x: x, y:y, o: o}; 
+    }
+
+    var isOutOfBounds = function(point){
+        if(point.x < 0 || point.x > bounds[0]-1){
+            return true;
+        } else if (point.y < 0 || point.y > bounds[1]-1){
+            return true;
+        }
+        return false;
+    }
+
     // mission summary function
     var missionSummary = function (robos) {
         // task #3
+        var living = [];
+        var dead = [];
         // summarize the mission and inject the results into the DOM elements referenced in readme.md
+        for(var i = 0; i < robos.length; i++){
+            var r = robos[i];
+            var alive = r.o !== DEAD;
+            if(alive){
+                living.push("<li>Position: " + r.x + ", " + r.y + " | " + r.o + "</li>");
+            }else{
+                dead.push("<li>Position: " + r.x + ", " + r.y + "</li>");
+            }
+        }
+
+        if(living.length > 0){
+           document.getElementById("robots").innerHTML = "<li style='list-style:none'>Robots remaining:</li><ul>" + living.join('') + "</ul>";    
+        }
+        
+        if(dead.length > 0){
+            document.getElementById("lostRobots").innerHTML = "<li style='list-style:none'>Robots lost:</li><ul>" + dead.join('') + "</ul>";    
+        }
+
     };
     // ~~~~~~!!!! please do not edit any code below this comment !!!!!!~~~~~~~;
     var canvas = document.getElementById('playfield')
@@ -71,14 +188,15 @@ window.onload = function () {
         gameWorld = [],
         gridText = [],
         gameWorld = [];
+
     canvas.font = 'bold ' + fontSize + 'px monospace';
     canvas.fillStyle = 'black';
     canvas.textAlign = 'center';
     var genworld = function (parsedCommand) {
         //build init world array
         gameWorld = [];
-        var bounds = parsedCommand.bounds,
-            robos = parsedCommand.robos;
+        bounds = parsedCommand.bounds;
+        var robos = parsedCommand.robos;
         var row = [];
         for (var i = 0; i < bounds[0]; i++) {
             row.push('.');
@@ -110,7 +228,7 @@ window.onload = function () {
             var blob = gameWorld[i].join('');
             canvas.fillText(blob, 250, i * fontSize + fontSize);
         }
-    };
+     };
     // wireup init functions for display
     genworld(parseInput(command));
 };
