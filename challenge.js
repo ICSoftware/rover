@@ -2,6 +2,13 @@
 window.onload = function () {
     var command =
         '5 3 \n 1 1 e\n rfrfrfrf\n 3 2 N \n frrffllffrrfll\n 0 3 w\n LLFFFLFLFL';
+	var bounds = new Array(),
+		scentedPos = new Array(),
+		fallenRobots = new Array();
+	var orn, 
+		validMoves = [{move: 'L', rotate: -90}, {move:'R', rotate: 90}, {move: 'F', rotate: 0}], // valid moves, add new move types here, e.g. 'B'
+		orientations = [{name: 'N', value: 0}, {name: 'E', value: 90}, {name: 'S', value: 180}, {name: 'W', value: 270}];
+		
     // this function parses the input string so that we have useful names/parameters
     // to define the playfield and the robots for subsequent steps
     var parseInput = function (input) {
@@ -11,26 +18,28 @@ window.onload = function () {
         // where bounds represents the top right corner of the plane and each robos object represents the
         // x,y coordinates of a robot and o is a string representing their orientation. a sample object is provided below
 		var cmdArray = input.split('\n');
-		console.log(cmdArray);
-		var bounds = cmdArray.shift().trim().split(' ');
+	
+		bounds = cmdArray.shift().trim().split(' ');
 		var robots = new Array(),
 			cmdLine = new Array();
 		var x,y,o, cmd = '';
+		
 		//ensuring even number of lines (2 per robot)
 		if(cmdArray.length % 2) {
 			alert('invalid number of command');
 			return;
 		}
+		
 		while(cmdArray.length) {
 			cmdLine = cmdArray.shift().trim().split(' ');
 			
-			//ensure that command line has all 3 parts: x, y, o
+			//ensure that first line has all 3 parts: x, y, o
 			if(cmdLine.length < 3) {
 				alert('invalid command: ' + cmdLine);
 				break;
 			}
-			x = cmdLine[0];
-			y = cmdLine[1];
+			x = parseInt(cmdLine[0]);
+			y = parseInt(cmdLine[1]);
 			o = cmdLine[2];
 			cmd = cmdArray.shift().trim();
 			robots.push({'x':x, 'y': y, 'o': o, 'command': cmd});
@@ -41,6 +50,7 @@ window.onload = function () {
     // this function replaces teh robos after they complete one instruction
     // from their commandset
     var tickRobos = function (robos) {
+	
         // task #2
         // in this function, write business logic to move robots around the playfield
         // the 'robos' input is an array of objects; each object has 4 parameters.
@@ -50,13 +60,65 @@ window.onload = function () {
         // example input:
         // robos[0] = {x: 2, y: 2, o: 'N', command: 'frlrlrl'}
         //                   |- becomes -|
-        // robos[0] = {x: 2, y: 1, o: 'N', command: 'rlrlrl'} 
+        // robos[0] = {x: 2, y: 3, o: 'N', command: 'rlrlrl'} 
         // if a robot leaves the bounds of the playfield, it should be removed from the robos
         // array. It should leave a 'scent' in it's place. If another robot–for the duration
         // of its commandset–encounters this 'scent', it should refuse any commands that would
         // cause it to leave the playfield.
 
         // !== write robot logic here ==!
+		var cmdDone = false; 
+		robos.forEach(function(robo, index) {
+			if(!robo.command.length) {
+				cmdDone = true;
+				return;
+			} else {
+				cmdDone = false;
+			}
+			var cmd = robo.command.slice(0,1).toUpperCase();
+			var coorObj = {x:robo.x, y:robo.y};
+			var orntObj = orientations.find(function(obj){
+				return obj.name === robo.o.toUpperCase();
+			});
+			var moveObj = validMoves.find(function(obj){
+				return obj.move === cmd.toUpperCase();
+			});
+			var newOrntObj = orientations.find(function(obj){
+				//if value is more than 270 (orientation 'W', then moving right, set to value 0 to 'N')
+				// else add values to determine new orientation
+				var newVal = (orntObj.value + moveObj.rotate) > 270 ? 0 : orntObj.value + moveObj.rotate;
+				return obj.value === newVal;
+			});
+			
+			robo.o = newOrntObj.name;	
+			
+			robo.command = robo.command.substring(1);
+			
+			switch(robo.o.toUpperCase()) {
+				case 'N':
+					coorObj.y +=1;
+					robo.y = scentedPos.indexOf(coorObj) > -1 ? coorObj.y : robo.y;	
+				break;
+				case 'S':
+					coorObj.y -=1;
+					robo.y = scentedPos.indexOf(coorObj) > -1 ? coorObj.y : robo.y;
+				break;
+				//ignoring L and R since they don't need movement, only orientation is changed
+			}
+			// if new coordinates fall outside of boundry by either x or y, remove robot 
+			// and store coordinates in the scented positions array, and store robot in the fallenRobots array
+			if(coorObj.y > bounds[1] || coorObj.y < 0 || coorObj.x > bounds[0] || coorObj.x < 0) {
+				robo.killer = robo.command.substring(0,1).toUpperCase();
+				fallenRobots.push(robo);
+				scentedPos.push(coorObj);
+				robos.splice(index, 1);				
+			}
+		});
+		
+		//missionSummary only if all commands are done or all robots have fallen
+		if(!robos.length || cmdDone) {
+			missionSummary(robos);
+		}
 
         //leave the below line in place
         placeRobos(robos);
@@ -65,6 +127,25 @@ window.onload = function () {
     var missionSummary = function (robos) {
         // task #3
         // summarize the mission and inject the results into the DOM elements referenced in readme.md
+		if(document.getElementById('robots').childElementCount != robos.length) {
+			robos.forEach(function(robot){
+				//Position: 3, 5 | Orientation: W
+				var node = document.createElement("LI");
+				var textnode = document.createTextNode("Position: " + robot.x + ", " + robot.y + " | " + "Orientation: " + robot.o);         // Create a text node
+				node.appendChild(textnode);
+				document.getElementById('robots').appendChild(node);
+			});
+		}
+		
+		if(document.getElementById('lostRobots').childElementCount != fallenRobots.length) {
+			fallenRobots.forEach(function(robot){
+				var node = document.createElement("LI");
+				var textnode = document.createTextNode("Position: " + robot.x + ", " + robot.y + " | Orientation: " + robot.o + " | Unexecuted Commands: " + robot.command + " | Killer Move: " + robot.killer);         // Create a text node
+				node.appendChild(textnode);
+				document.getElementById('lostRobots').appendChild(node);
+			});
+		}
+		
     };
     // ~~~~~~!!!! please do not edit any code below this comment !!!!!!~~~~~~~;
     var canvas = document.getElementById('playfield')
