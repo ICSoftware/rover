@@ -1,7 +1,7 @@
 'use strict';
 window.onload = function () {
     var command =
-        '10 5 \n 1 1 e\n rfrfrfrf\n 3 2 N \n frrffllllfffffffffrrfll\n 0 3 w\n LLFFFLFLFL';
+        '10 5 \n 1 1 e\n rfrfffffffrfrf\n 3 2 N \n frrffllllfffffffffrrfll\n 0 3 w\n LLFFFfLFLFL';
     // this function parses the input string so that we have useful names/parameters
     // to define the playfield and the robots for subsequent steps
 
@@ -66,7 +66,7 @@ window.onload = function () {
         // !== write robot logic here ==!
         for(var i = 0; i < robos.length; i++){
             var data = robos[i];
-            if(data.command.length > 0){
+            if(data.command.length > 0 && data.o != DEAD){
                 var dir = data.command.splice(0, 1)[0];
                 commandCount++;
                 // Get new position and direction
@@ -91,8 +91,8 @@ window.onload = function () {
                         // This is a new, unknown edge.  Kill the soldier and leave
                         // obituary.
                         console.log("out of bounds");
-                        robos[i].command = [];
                         robos[i].o = DEAD;
+                        robos[i].killerMove = dir;
                         fallen.push(robos[i]);
                     }
                     else
@@ -163,7 +163,7 @@ window.onload = function () {
             if(alive){
                 living.push("<li>Position: " + r.x + ", " + r.y + " | " + r.o + "</li>");
             }else{
-                dead.push("<li>Position: " + r.x + ", " + r.y + "</li>");
+                dead.push("<li>Position: " + r.x + ", " + r.y + ", Killer move: " + r.killerMove + ", Remaining commands: " + r.command.join(', ') + "</li>");
             }
         }
 
