@@ -166,7 +166,7 @@ window.onload = function () {
 
         _.each(lostrobots, function(robo){
           var li = document.createElement("li");
-          li.innerHTML = "Position: " + robo.robo.x + ", " + robo.robo.o + " | Orientation: " + robo.robo.o + " | Last command: " + robo.command + " | Unfinished commands: " + robo.robo.command
+          li.innerHTML = "Position: " + robo.robo.x + ", " + robo.robo.y + " | Orientation: " + robo.robo.o + " | Last command: " + robo.command + " | Unfinished commands: " + robo.robo.command
           ul2.appendChild(li);
         });
 
