@@ -1,39 +1,92 @@
 'use strict';
 window.onload = function () {
+    var gbounds;   
+    var summarydone = false;
     var command =
         '5 3 \n 1 1 e\n rfrfrfrf\n 3 2 N \n frrffllffrrfll\n 0 3 w\n LLFFFLFLFL';
     // this function parses the input string so that we have useful names/parameters
     // to define the playfield and the robots for subsequent steps
-    var parseInput = function (input) {
-        // task #1 
-        // replace the 'parsed' var below to be the string 'command' parsed into an object we can pass to genworld();
-        // genworld expects an input object in the form { 'bounds': [3, 8], 'robos': [{x: 2, y: 1, o: 'W', command: 'rlrlff'}]}
-        // where bounds represents the top right corner of the plane and each robos object represents the
-        // x,y coordinates of a robot and o is a string representing their orientation. a sample object is provided below
-        var parsed = {
-            bounds: [20, 20],
-            robos: [{
-                x: 2,
-                y: 1,
-                o: 'W',
-                command: 'rlrlrff'
-            }, {
-                x: 12,
-                y: 10,
-                o: 'E',
-                command: 'fffffffffff'
-            }, {
-                x: 18,
-                y: 8,
-                o: 'N',
-                command: 'frlrlrlr'
-            }]
-        };
-        return parsed;
+    //
+    var trim = function(s){ 
+      return s.replace( /^\s+|\s+$/g, '' ); 
     };
+
+    var separateRobots = function(arr){
+        var returnobj = {robos: []};
+        var robos_arrs = _.chunk(arr,2); // assuming correct input
+        
+        _.each(robos_arrs, function(robo_arr,i){
+          var robo = {};
+          var coords = trim(robo_arr[0]).split(" ");
+          robo['x'] = parseInt(coords[0]);
+          robo['y'] = parseInt(coords[1])
+          robo['o'] = coords[2].toUpperCase(); // someone on the input side got lazy?
+          robo['id'] = i; // need a unique id...
+          robo['command'] = trim(robo_arr[1]);
+          returnobj.robos.push(robo);
+        });
+        return returnobj;
+    };
+
+    var parseInput = function(input) {
+        var lines = input.split("\n");
+        var bounds = trim(lines.shift()).split(" ");
+        gbounds = bounds;
+        var obj = separateRobots(lines);
+        obj['bounds'] = bounds;
+        return obj;
+    };
+
+    // repurposed from http://stackoverflow.com/questions/24094466/javascript-sum-two-arrays-in-single-iteration - nice util function
+    var sumArray = function (arr1,arr2) {
+      var sum = [];
+      if (arr2 != null && arr1.length == arr2.length) {
+          for (var i = 0; i < arr2.length; i++){
+              sum.push(arr1[i] + arr2[i]);
+          }
+      }
+      return sum;
+    }
+
     // this function replaces teh robos after they complete one instruction
     // from their commandset
+    var forward_instructions = { // there's an inconsistency between the tickRobos comment and the readme.md
+      'N': [0,1],
+      'E': [1,0],
+      'S': [0,-1],
+      'W': [-1,0]
+    };
+    var right = {
+      'N': 'E',
+      'E': 'S',
+      'S': 'W',
+      'W': 'N'
+    };
+    var left = {
+      'N': 'W',
+      'W': 'S',
+      'S': 'E',
+      'E': 'N'
+    };
+
+
+    // assuming scents are distinct from lost robots for some reason.  if not, could refactor down.
+    var scents = [];
+    var isBadForward = function(pos,o){
+      var isbad = false;
+      _.each(scents, function(sc){ 
+        if(pos[0] == sc[0] && pos[1] == sc[1] && pos[2] == sc[2]){
+          isbad = true;
+        }
+      });
+      return isbad;
+    };
+
+    var lostrobots = [];
+
+
     var tickRobos = function (robos) {
+
         // task #2
         // in this function, write business logic to move robots around the playfield
         // the 'robos' input is an array of objects; each object has 4 parameters.
@@ -49,7 +102,50 @@ window.onload = function () {
         // of its commandset–encounters this 'scent', it should refuse any commands that would
         // cause it to leave the playfield.
 
-        // !== write robot logic here ==!
+        var todelete = [];
+        var tosummarize = [];
+        var cansummarize = true;
+        _.each(robos, function(robo,ri){ 
+          var instructions = robo.command.split("");
+          var currentcommand = instructions.shift();
+          if(robo.x < 0 || robo.x >= gbounds[0] || robo.y < 0 || robo.y >= gbounds[1]){
+              todelete.unshift(ri);
+              lostrobots.push({robo: robo, command: "N/A, someone dropped it off a cliff"});
+          }
+          if(typeof currentcommand == "undefined"){
+              tosummarize.push(robo);
+          } else {
+              cansummarize = false;
+              robo.command = instructions.join("");
+              // execute
+              if(currentcommand == 'r'){
+                robo.o = right[robo.o];
+              } else if(currentcommand == 'l'){
+                robo.o = left[robo.o];
+              } else if(currentcommand == 'f'){
+                var currentpos = [robo.x, robo.y, robo.o];
+                  if(!isBadForward(currentpos)){
+                  var posArr = forward_instructions[robo.o];
+                  robo.x += posArr[0];
+                  robo.y += posArr[1];
+                  // there are problems with the readme.md.  "upper right corner" specified is gbounds[0], gbounds[1], however the world that's displayed is one dot smaller in each dimension - fencepost error!  ergo, have to do >= instead of > in this function...
+                  if(robo.x < 0 || robo.x >= gbounds[0] || robo.y < 0 || robo.y >= gbounds[1]){
+                      lostrobots.push({robo: robo, command: currentcommand});
+                      scents.push(currentpos);
+                      todelete.unshift(ri);
+                  }
+                }
+              }
+          }
+        });
+        _.each(todelete, function(i){
+            robos.splice(i,1);
+        });
+        if(!summarydone && cansummarize){
+            summarydone = true;
+            missionSummary(robos);
+            console.log("done!");
+        }
 
         //leave the below line in place
         placeRobos(robos);
@@ -58,7 +154,27 @@ window.onload = function () {
     var missionSummary = function (robos) {
         // task #3
         // summarize the mission and inject the results into the DOM elements referenced in readme.md
+        var ul1 = document.getElementById('robots');
+        var ul2 = document.getElementById('lostRobots');
+        var rbmeta = document.getElementById('roboMeta');
+
+        _.each(robos, function(robo){
+          var li = document.createElement("li");
+          li.innerHTML = "Position: " + robo.x + ", " + robo.y + " | Orientation: " + robo.o;
+          ul1.appendChild(li);
+        });
+
+        _.each(lostrobots, function(robo){
+          var li = document.createElement("li");
+          li.innerHTML = "Position: " + robo.robo.x + ", " + robo.robo.o + " | Orientation: " + robo.robo.o + " | Last command: " + robo.command + " | Unfinished commands: " + robo.robo.command
+          ul2.appendChild(li);
+        });
+
+        rbmeta.removeAttribute("style");
     };
+
+
+
     // ~~~~~~!!!! please do not edit any code below this comment !!!!!!~~~~~~~;
     var canvas = document.getElementById('playfield')
         .getContext('2d'),
@@ -106,6 +222,7 @@ window.onload = function () {
     //render block
     var render = function (gameWorld, robos) {
         canvas.clearRect(0, 0, width, height);
+        gameWorld = _.reverse(gameWorld); // these rows were rendering backwards...
         for (var i = 0; i < gameWorld.length; i++) {
             var blob = gameWorld[i].join('');
             canvas.fillText(blob, 250, i * fontSize + fontSize);

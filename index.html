@@ -4,13 +4,16 @@
   <head>
     <title>Rover Code Challenge</title>
     <script type="text/javascript" src="challenge.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.0.0/lodash.min.js"></script>
   </head>
 
   <body>
     <h1>Rover Code Challenge</h1>
     <canvas width="500" height="500" id="playfield"></canvas>
-    <div class="meta">
+    <div class="meta" id="roboMeta" style="display:none;">
+      <h2>Remaining robots:</h2>
       <ul id="robots"></ul>
+      <h2>Lost robots:</h2>
       <ul id="lostRobots"></ul>
     </div>
   </body>
