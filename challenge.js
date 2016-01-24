@@ -5,29 +5,27 @@ window.onload = function () {
     // this function parses the input string so that we have useful names/parameters
     // to define the playfield and the robots for subsequent steps
     var parseInput = function (input) {
-        // task #1 
+        // task #1
         // replace the 'parsed' var below to be the string 'command' parsed into an object we can pass to genworld();
         // genworld expects an input object in the form { 'bounds': [3, 8], 'robos': [{x: 2, y: 1, o: 'W', command: 'rlrlff'}]}
         // where bounds represents the top right corner of the plane and each robos object represents the
         // x,y coordinates of a robot and o is a string representing their orientation. a sample object is provided below
+        var inputArray = input.split("\n ");
+        var boundArray=inputArray[0].split(" ");
+        inputArray.shift();
+        var robots = [];
+        for (var i=0;i<inputArray.length;i+=2) {
+            var robot = {};
+            var robotCoordiate = inputArray[i].split(" ");
+            robot.x = parseInt(robotCoordiate[0]);
+            robot.y = parseInt(robotCoordiate[1]);
+            robot.o = robotCoordiate[2].toUpperCase();
+            robot.command = inputArray[i+1].toLowerCase();
+            robots.push(robot);
+        }
         var parsed = {
-            bounds: [20, 20],
-            robos: [{
-                x: 2,
-                y: 1,
-                o: 'W',
-                command: 'rlrlrff'
-            }, {
-                x: 12,
-                y: 10,
-                o: 'E',
-                command: 'fffffffffff'
-            }, {
-                x: 18,
-                y: 8,
-                o: 'N',
-                command: 'frlrlrlr'
-            }]
+            bounds: boundArray,
+            robos: robots
         };
         return parsed;
     };
@@ -38,12 +36,12 @@ window.onload = function () {
         // in this function, write business logic to move robots around the playfield
         // the 'robos' input is an array of objects; each object has 4 parameters.
         // This function needs to edit each robot in the array so that its x/y coordinates
-        // and orientation parameters match the robot state after 1 command has been completed. 
+        // and orientation parameters match the robot state after 1 command has been completed.
         // Also, you need to remove the command the robot just completed from the command list.
         // example input:
         // robos[0] = {x: 2, y: 2, o: 'N', command: 'frlrlrl'}
         //                   |- becomes -|
-        // robos[0] = {x: 2, y: 1, o: 'N', command: 'rlrlrl'} 
+        // robos[0] = {x: 2, y: 1, o: 'N', command: 'rlrlrl'}
         // if a robot leaves the bounds of the playfield, it should be removed from the robos
         // array. It should leave a 'scent' in it's place. If another robot–for the duration
         // of its commandset–encounters this 'scent', it should refuse any commands that would
@@ -114,4 +112,3 @@ window.onload = function () {
     // wireup init functions for display
     genworld(parseInput(command));
 };
-
