@@ -1,7 +1,16 @@
 'use strict';
+window.fallingOutRecord = {};
+var checkIfFallingOutScent = function(robot) {
+    if (robot.o === window.fallingOutRecord[robot.x+""+robot.y]) {
+        return 0;
+    } else {
+        return 1;
+    }
+};
 window.onload = function () {
     var command =
-        '5 3 \n 1 1 e\n rfrfrfrf\n 3 2 N \n frrffllffrrfll\n 0 3 w\n LLFFFLFLFL';
+        // '5 3 \n 1 1 e\n rfrfrfrf\n 3 2 N \n frrffllffrrfll\n 0 3 w\n LLFFFLFLFL'; this coordinate will put robot out of bound from beginning. so adjust to fix the board.
+        '5 3 \n 1 1 e\n rfrfrfrf\n 3 2 N \n frrffllffrrfll\n 1 3 w\n LLFFFLFLFL';
     // this function parses the input string so that we have useful names/parameters
     // to define the playfield and the robots for subsequent steps
     var parseInput = function (input) {
@@ -17,8 +26,8 @@ window.onload = function () {
         for (var i=0;i<inputArray.length;i+=2) {
             var robot = {};
             var robotCoordiate = inputArray[i].split(" ");
-            robot.x = parseInt(robotCoordiate[0]);
-            robot.y = parseInt(robotCoordiate[1]);
+            robot.x = parseInt(robotCoordiate[0])-1;
+            robot.y = parseInt(robotCoordiate[1])-1;
             robot.o = robotCoordiate[2].toUpperCase();
             robot.command = inputArray[i+1].toLowerCase();
             robots.push(robot);
@@ -29,9 +38,12 @@ window.onload = function () {
         };
         return parsed;
     };
+
+
     // this function replaces teh robos after they complete one instruction
     // from their commandset
     var tickRobos = function (robos) {
+        var directions="NWSE";
         // task #2
         // in this function, write business logic to move robots around the playfield
         // the 'robos' input is an array of objects; each object has 4 parameters.
@@ -46,12 +58,49 @@ window.onload = function () {
         // array. It should leave a 'scent' in it's place. If another robot–for the duration
         // of its commandset–encounters this 'scent', it should refuse any commands that would
         // cause it to leave the playfield.
+        for (var i=0;i<robos.length;i++) {
+            var robot = robos[i];
+            var command = robot.command.charAt(0);
+            var currentLocation = robot.x+""+robot.y;
+            robot.command = robot.command.slice(1);
+            if (command === "l" || command === "r") {//robot only turn, no falling risk
+                if ((command ==="l" && robot.o === "E") || (command ==="r" && robot.o === "N")) {
+                    robot.o = (robot.o === "E") ? "N" : "E";
+                } else {
+                    robot.o = directions[command === "l" ? directions.indexOf(robot.o) + 1 : directions.indexOf(robot.o) - 1];
+                }
+            } else { //robot moving forward
+                switch (robot.o) {
+                    case "N":
+                        robot.y++;
+                        break;
+                    case "W":
+                        robot.x--;
+                        break;
+                    case "S":
+                        robot.y--;
+                        break;
+                    case "E":
+                        robot.x++;
+                        break;
+                    default:
+                }
+            }
+            if (robot.x<0 || robot.x>gameWorld[0].length-1 || robot.y<0 || robot.y>gameWorld.length-1) {//falling out
+                robos.splice(i, 1);
+                i--;
+                window.fallingOutRecord[currentLocation] = robot.o;
+            } else {
+                robos[i] = robot;
+            }
 
+        }
         // !== write robot logic here ==!
 
         //leave the below line in place
         placeRobos(robos);
     };
+
     // mission summary function
     var missionSummary = function (robos) {
         // task #3
