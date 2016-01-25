@@ -192,7 +192,7 @@ window.onload = function () {
         tickRobos(robos);
         window.setTimeout(function () {
             genworld(parsedCommand);
-        }, 100);
+        }, 1000);
     };
     var placeRobos = function (robos) {
         for (var i in robos) {
