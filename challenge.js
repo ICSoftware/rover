@@ -1,10 +1,17 @@
 'use strict';
 window.fallingOutRecord = {};
+window.unfinishedInstruction={};
+window.fallingOutRecord.n=0;
+window.gameFinished=false;
 var checkIfFallingOutScent = function(robot) {
-    if (robot.o === window.fallingOutRecord[robot.x+""+robot.y]) {
-        return 0;
-    } else {
+    if (!window.fallingOutRecord[robot.x+"_"+robot.y]) {
         return 1;
+    } else{
+        if (robot.o === window.fallingOutRecord[robot.x+"_"+robot.y].instruction) {
+            return 0;
+        } else {
+            return 1;
+        }
     }
 };
 window.onload = function () {
@@ -44,6 +51,7 @@ window.onload = function () {
     // from their commandset
     var tickRobos = function (robos) {
         var directions="NWSE";
+        var remainingCommand = false;
         // task #2
         // in this function, write business logic to move robots around the playfield
         // the 'robos' input is an array of objects; each object has 4 parameters.
@@ -58,10 +66,15 @@ window.onload = function () {
         // array. It should leave a 'scent' in it's place. If another robot–for the duration
         // of its commandset–encounters this 'scent', it should refuse any commands that would
         // cause it to leave the playfield.
+        if (robos.length==0) {
+            missionSummary();
+            return;
+        }
         for (var i=0;i<robos.length;i++) {
             var robot = robos[i];
             var command = robot.command.charAt(0);
-            var currentLocation = robot.x+""+robot.y;
+            if (!!command) remainingCommand = true;
+            var currentLocation = robot.x+"_"+robot.y;
             robot.command = robot.command.slice(1);
             if (command === "l" || command === "r") {//robot only turn, no falling risk
                 if ((command ==="l" && robot.o === "E") || (command ==="r" && robot.o === "N")) {
@@ -70,31 +83,35 @@ window.onload = function () {
                     robot.o = directions[command === "l" ? directions.indexOf(robot.o) + 1 : directions.indexOf(robot.o) - 1];
                 }
             } else { //robot moving forward
-                switch (robot.o) {
-                    case "N":
-                        robot.y++;
-                        break;
-                    case "W":
-                        robot.x--;
-                        break;
-                    case "S":
-                        robot.y--;
-                        break;
-                    case "E":
-                        robot.x++;
-                        break;
-                    default:
+                if (!!command){
+                    switch (robot.o) {
+                        case "N":
+                            robot.y-=checkIfFallingOutScent(robot);
+                            break;
+                        case "W":
+                            robot.x-=checkIfFallingOutScent(robot);
+                            break;
+                        case "S":
+                            robot.y+=checkIfFallingOutScent(robot);
+                            break;
+                        case "E":
+                            robot.x+=checkIfFallingOutScent(robot);
+                            break;
+                        default:
+                    }
                 }
             }
             if (robot.x<0 || robot.x>gameWorld[0].length-1 || robot.y<0 || robot.y>gameWorld.length-1) {//falling out
                 robos.splice(i, 1);
                 i--;
-                window.fallingOutRecord[currentLocation] = robot.o;
+                window.fallingOutRecord[currentLocation] = {"instruction":robot.o, "remaining":robot.command};
+                window.fallingOutRecord.n++;
             } else {
                 robos[i] = robot;
             }
 
         }
+        if (!remainingCommand) missionSummary(robos);
         // !== write robot logic here ==!
 
         //leave the below line in place
@@ -103,6 +120,42 @@ window.onload = function () {
 
     // mission summary function
     var missionSummary = function (robos) {
+        if (!window.gameFinished) {
+            var para = document.createElement("P");
+            var t = document.createTextNode("There are "+robos.length+" robots left:");
+            para.appendChild(t);
+            document.body.appendChild(para);
+            var robot;
+            for (var i=0; i<robos.length;i++) {
+                robot = robos[i];
+                para = document.createElement("P");
+                t = document.createTextNode("Position: "+ robot.x+", "+robot.y+" | Orientation: "+robot.o);
+                para.appendChild(t);
+                document.body.appendChild(para);
+            }
+
+            para = document.createElement("P");
+            t = document.createTextNode("There are "+window.fallingOutRecord.n+" robots dead:");
+            para.appendChild(t);
+            document.body.appendChild(para);
+            var location;
+            var x;
+            var y;
+            for (location in window.fallingOutRecord) {
+                if (location !== "n") {
+                    x=location.split("_")[0];
+                    y=location.split("_")[1];
+                    para = document.createElement("P");
+                    t = document.createTextNode(
+                        "Position: " + x + ", " + y +
+                        " | Orientation: " + window.fallingOutRecord[location].instruction +
+                        " | Unexecuted instructions: " + window.fallingOutRecord[location].remaining);
+                    para.appendChild(t);
+                    document.body.appendChild(para);
+                }
+            }
+        }
+        window.gameFinished=true;
         // task #3
         // summarize the mission and inject the results into the DOM elements referenced in readme.md
     };
@@ -139,7 +192,7 @@ window.onload = function () {
         tickRobos(robos);
         window.setTimeout(function () {
             genworld(parsedCommand);
-        }, 1000);
+        }, 100);
     };
     var placeRobos = function (robos) {
         for (var i in robos) {
