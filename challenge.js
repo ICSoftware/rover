@@ -1,7 +1,16 @@
 'use strict';
+
+import stringCommandParser from './lib/command-parsers/string';
+import scooby, { gatherTheDead } from './lib/drivers/scooby';
+import robotsReporter from './lib/elements/robots-reporter';
+
+const deadRobots = robotsReporter(document.getElementById('lostRobots'));
+const robots = robotsReporter(document.getElementById('robots'));
+
 window.onload = function () {
     var command =
         '5 3 \n 1 1 e\n rfrfrfrf\n 3 2 N \n frrffllffrrfll\n 0 3 w\n LLFFFLFLFL';
+    var bounds;
     // this function parses the input string so that we have useful names/parameters
     // to define the playfield and the robots for subsequent steps
     var parseInput = function (input) {
@@ -10,25 +19,15 @@ window.onload = function () {
         // genworld expects an input object in the form { 'bounds': [3, 8], 'robos': [{x: 2, y: 1, o: 'W', command: 'rlrlff'}]}
         // where bounds represents the top right corner of the plane and each robos object represents the
         // x,y coordinates of a robot and o is a string representing their orientation. a sample object is provided below
-        var parsed = {
-            bounds: [20, 20],
-            robos: [{
-                x: 2,
-                y: 1,
-                o: 'W',
-                command: 'rlrlrff'
-            }, {
-                x: 12,
-                y: 10,
-                o: 'E',
-                command: 'fffffffffff'
-            }, {
-                x: 18,
-                y: 8,
-                o: 'N',
-                command: 'frlrlrlr'
-            }]
+        
+        var parsed = stringCommandParser(input);
+        var [ x, y ] = parsed.bounds;
+        bounds = {
+
+            x, y
+
         };
+
         return parsed;
     };
     // this function replaces teh robos after they complete one instruction
@@ -50,14 +49,61 @@ window.onload = function () {
         // cause it to leave the playfield.
 
         // !== write robot logic here ==!
+        
+        
+        robos = scooby(robos, bounds);
 
-        //leave the below line in place
+        const allRobos = [].concat(robos, gatherTheDead());
+        const doneRobosLength = allRobos.filter(robo => robo.dead || robo.command === '').length;
+
+        if (doneRobosLength === allRobos.length) {
+            
+            missionSummary(allRobos);
+
+        }
+
         placeRobos(robos);
     };
     // mission summary function
+    let missionSummarized = false;
+
     var missionSummary = function (robos) {
         // task #3
         // summarize the mission and inject the results into the DOM elements referenced in readme.md
+        if (missionSummarized) {
+
+            return;
+
+        }
+
+        else {
+
+            missionSummarized = true;
+
+        }
+
+        robos.forEach(robo => {
+
+            const { x, y, o } = robo;
+            const coords = { x, y };
+
+            if (robo.dead) {
+
+                const killerInstruction = robo.executedCommands.substring(0, 1);
+                const leftOverCommands = robo.command.split('');
+
+                deadRobots.addRobot(coords, o, leftOverCommands, killerInstruction);
+
+            }
+
+            else {
+
+                robots.addRobot(coords, o);
+                    
+            }
+
+        });
+        
     };
     // ~~~~~~!!!! please do not edit any code below this comment !!!!!!~~~~~~~;
     var canvas = document.getElementById('playfield')
