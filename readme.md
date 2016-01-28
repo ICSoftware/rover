@@ -1,4 +1,21 @@
 # Rover code challenge
+
+## Forked Instructions
+
+Application code is in the `challenge.js` file as well as the `lib/` folder.
+
+The `test` directory has a `test/lib/` folder which mirrors the top level `lib/` folder with the appropriate tests.
+
+Run `npm install` to gather necessary dependecies.
+
+Run `npm start` in your terminal to watch, run and live reload tests.
+
+Visit `http://localhost:3000` to see the rover in action.
+
+Visit `http://localhost:3000/test` to see the tests and the rover.
+
+Tests are also able to run in the node.js environment via JSDom.
+
 ## Installation
 Point a webserver at the root of this repo. Visit your local machine in the browser. You should see a grid of dot characters.
 ## Submission
