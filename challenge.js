@@ -1,62 +1,184 @@
 'use strict';
 window.onload = function () {
-    var command =
-        '5 3 \n 1 1 e\n rfrfrfrf\n 3 2 N \n frrffllffrrfll\n 0 3 w\n LLFFFLFLFL';
+       var command = '20 20 \n 1 1 e\n rfrfffrfrf\n 13 2 N \n frrffllffrrfll\n 0 3 w\n LLFFFLFLFL';
+
+ //var command = '20 20 \n 1 1 e\n rfrfffrfrf\n';//  1 4 n\n ffflfflf';
     // this function parses the input string so that we have useful names/parameters
     // to define the playfield and the robots for subsequent steps
     var parseInput = function (input) {
-        // task #1 
-        // replace the 'parsed' var below to be the string 'command' parsed into an object we can pass to genworld();
-        // genworld expects an input object in the form { 'bounds': [3, 8], 'robos': [{x: 2, y: 1, o: 'W', command: 'rlrlff'}]}
-        // where bounds represents the top right corner of the plane and each robos object represents the
-        // x,y coordinates of a robot and o is a string representing their orientation. a sample object is provided below
-        var parsed = {
-            bounds: [20, 20],
-            robos: [{
-                x: 2,
-                y: 1,
-                o: 'W',
-                command: 'rlrlrff'
-            }, {
-                x: 12,
-                y: 10,
-                o: 'E',
-                command: 'fffffffffff'
-            }, {
-                x: 18,
-                y: 8,
-                o: 'N',
-                command: 'frlrlrlr'
-            }]
-        };
+        //Removing \n and cleaning the array by removing the empty elements
+       var  commandParse=command.replace(/\n/g,"").split(" ") ;
+       var commandParseClean=new Array();
+       for (var i = 0; i < commandParse.length; i++) {
+           if (commandParse[i]) {
+            commandParseClean.push(commandParse[i]);
+           }
+        }
+       
+       
+       //Defining parsed object, setting the boundary of the field and
+       // setting the properties of parsed object
+
+        var parsed=new Object();
+        parsed.bounds=[commandParseClean[0],commandParseClean[1]];
+        parsed.robos=new Array();
+        
+     
+      var j=0;
+      
+        for (var i=2;i<commandParseClean.length-3;i=i+4){
+          parsed.robos[j]={
+            x:commandParseClean[i],
+            y:commandParseClean[i+1],
+            o:commandParseClean[i+2].toLowerCase(),
+            command:commandParseClean[i+3].toLowerCase()+''
+                         
+          };
+         j++;   
+        }
+        
+       //Defining Global variables to set the boundary of the field and the number of 
+       //robots that are not lost.
+        window.executedCommand=new Array();
+        window.activeRobots=new Array();
+        window.boundry =parsed.bounds;
+         for (var i=0;i<parsed.robos.length;i++){
+             
+             
+            activeRobots[i]=i;
+            
+        }
+        //scenet is an array that will contains the information of lost robots.
+        window.scent=new Array();
         return parsed;
     };
     // this function replaces teh robos after they complete one instruction
     // from their commandset
     var tickRobos = function (robos) {
-        // task #2
-        // in this function, write business logic to move robots around the playfield
-        // the 'robos' input is an array of objects; each object has 4 parameters.
-        // This function needs to edit each robot in the array so that its x/y coordinates
-        // and orientation parameters match the robot state after 1 command has been completed. 
-        // Also, you need to remove the command the robot just completed from the command list.
-        // example input:
-        // robos[0] = {x: 2, y: 2, o: 'N', command: 'frlrlrl'}
-        //                   |- becomes -|
-        // robos[0] = {x: 2, y: 1, o: 'N', command: 'rlrlrl'} 
-        // if a robot leaves the bounds of the playfield, it should be removed from the robos
-        // array. It should leave a 'scent' in it's place. If another robot–for the duration
-        // of its commandset–encounters this 'scent', it should refuse any commands that would
-        // cause it to leave the playfield.
+        
+        
+      
+        //Take actions for active robots
+        for (var i=0;i<activeRobots.length;i++){
+            
+            executedCommand[activeRobots[i]]=(executedCommand[activeRobots[i]] ? executedCommand[activeRobots[i]]+robos[activeRobots[i]].command.substr(0,1) : robos[activeRobots[i]].command.substr(0,1));
+            
+            //Get a command for an active robot
+            if (robos[activeRobots[i]].command.substr(0,1)=='l' ){
+                if (robos[activeRobots[i]].o=="n" ){ robos[activeRobots[i]].o="w"; }
+                else if (robos[activeRobots[i]].o=="w" ){ robos[activeRobots[i]].o="s"; }
+                else if (robos[activeRobots[i]].o=="s" ){ robos[activeRobots[i]].o="e"; }
+                else if (robos[activeRobots[i]].o=="e" ){ robos[activeRobots[i]].o="n"; }
+                
+            }
+            
+           if (robos[activeRobots[i]].command.substr(0,1)=='r' ){
+               
+                if (robos[activeRobots[i]].o=="n" ){ robos[activeRobots[i]].o="e"; }
+                else if (robos[activeRobots[i]].o=="e" ){ robos[activeRobots[i]].o="s"; }
+                else if (robos[activeRobots[i]].o=="s" ){ robos[activeRobots[i]].o="w"; }
+                else if (robos[activeRobots[i]].o=="w" ){ robos[activeRobots[i]].o="n"; }
+                
+            }
+            
+            
+             if (robos[activeRobots[i]].command.substr(0,1)=='f' ){
+                 
+                 
+                 var oldx=robos[activeRobots[i]].x;
+                 var oldy=robos[activeRobots[i]].y; 
+                 var oldo=robos[activeRobots[i]].o;
+                 
+                 
+                 var accpetcommand=true;
+                 for (var j=0;j<scent.length;j++){
+                     
+                     if (Number(robos[activeRobots[i]].x)==scent[j].x && Number(robos[activeRobots[i]].y)==scent[j].y && robos[activeRobots[i]].o==scent[j].o){
+                     
+                        accpetcommand=false;
+                    
+                    }
+                     }
+                     
+                 
+                 
+                 
+                 
+                 
+                if (robos[activeRobots[i]].o=="n" && accpetcommand){robos[activeRobots[i]].y=Number(robos[activeRobots[i]].y)-1; }
+                else if (robos[activeRobots[i]].o=="e" && accpetcommand){ robos[activeRobots[i]].x=Number(robos[activeRobots[i]].x)+1; }
+                else if (robos[activeRobots[i]].o=="s" && accpetcommand){ robos[activeRobots[i]].y=Number(robos[activeRobots[i]].y)+1; }
+                else if (robos[activeRobots[i]].o=="w" && accpetcommand){ robos[activeRobots[i]].x=Number(robos[activeRobots[i]].x)-1; }
+                
+                //storing the information of the lost robot
+                if (Number(robos[activeRobots[i]].x)<0 || Number(robos[activeRobots[i]].y)<0 || Number(robos[activeRobots[i]].y)>=boundry[1] || Number(robos[activeRobots[i]].x)>=boundry[0]){
+                scent.push({x:oldx,y:oldy,o:oldo,index:i,leftcommand:robos[activeRobots[i]].command.substr(1,robos[activeRobots[i]].command.length-1)});
+                
+                }
+                
+                
+            }     
+         //Updating the command list   
+        robos[activeRobots[i]].command=robos[activeRobots[i]].command.substr(1, robos[activeRobots[i]].command.length-1)+"";                                            
+          
+        }
+        
+        var iterate=activeRobots.length;
+        //Removing the lost robots from the active robots
+        for (var i=0;i<scent.length;i++){
+            for (var j=iterate-1;j>-1;j--){
+                
+                if(scent[i].index==activeRobots[j]){
 
-        // !== write robot logic here ==!
+                    activeRobots.splice(j,1);
+                             
+                }
+            }
+        }
+        
+      
+        
+        
+       var test=1;
+        for (var i=0;i<activeRobots.length;i++){
+            
+            if(robos[activeRobots[i]].command!=""){
+                test=0;
+            }
+            
+        }
+       
+        if (test){
+            
+            missionSummary(robos);
+        }
+        
+        
 
         //leave the below line in place
         placeRobos(robos);
     };
     // mission summary function
     var missionSummary = function (robos) {
-        // task #3
+        var textSurvive="";
+        var textdead="";
+        for (var i=0;i<activeRobots.length;i++){
+            textSurvive=textSurvive+"<li> ID: "+activeRobots[i]+", Position: "+robos[activeRobots[i]].x+", "+robos[activeRobots[i]].y+"| Orientation "+robos[activeRobots[i]].o.toUpperCase()+ "</li>";
+            
+        }
+        for (var i=0;i<scent.length;i++){
+            
+            textdead=textdead+"<li> ID: "+scent[i].index+", Last Position: "+scent[i].x+", "+scent[i].y+"| Unfinished instructions "+scent[i].leftcommand+", Killing instrucations "+executedCommand[scent[i].index] +"</li>";
+            
+        }
+        
+        
+        document.getElementById("robots").innerHTML=textSurvive;
+        document.getElementById("lostRobots").innerHTML=textdead;
+        
+        
+        
+        
         // summarize the mission and inject the results into the DOM elements referenced in readme.md
     };
     // ~~~~~~!!!! please do not edit any code below this comment !!!!!!~~~~~~~;
