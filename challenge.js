@@ -29,6 +29,36 @@ window.onload = function () {
                 command: 'frlrlrlr'
             }]
         };
+
+        if(input) {
+          var splitInput = input.split('\n');
+
+          //bounds
+          parsed.bounds = [];
+          parsed.bounds = splitInput
+            .shift()
+            .trim()
+            .split(' ')
+            .map(function(value) {
+              return Number.parseInt(value, 10);
+            });
+
+          //robos
+          parsed.robos = [];
+          splitInput.forEach(function(value,index) {
+            if(index % 2 === 0) {
+              var splitValue = value.trim().split(' ');
+              parsed.robos.push({
+                x: Number.parseInt(splitValue[0], 10),
+                y: Number.parseInt(splitValue[1], 10),
+                o: splitValue[2].toUpperCase(),
+              });
+            } else {
+              parsed.robos[parsed.robos.length-1].command = value.trim().toLowerCase();
+            }
+          });
+        }
+
         return parsed;
     };
     // this function replaces teh robos after they complete one instruction
