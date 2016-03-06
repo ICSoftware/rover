@@ -34,7 +34,6 @@ window.onload = function () {
           var splitInput = input.split('\n');
 
           //bounds
-          parsed.bounds = [];
           parsed.bounds = splitInput
             .shift()
             .trim()
@@ -80,6 +79,24 @@ window.onload = function () {
         // cause it to leave the playfield.
 
         // !== write robot logic here ==!
+		function incrementPosition(state) {
+			var command = state.command.split('').shift();
+			switch(command){
+			}
+		}
+
+		function isOutOfBounds(position) {
+			if(scent.x === -1 || scent.x === bounds[0] + 1 ||
+				scent.y === -1 || scent.y === bounds[1] + 1) {
+
+				return true;
+			}
+
+			return false;
+		}
+
+		robos.forEach(function(value,index,array) {
+		});
 
         //leave the below line in place
         placeRobos(robos);
@@ -98,9 +115,7 @@ window.onload = function () {
         .height * 2,
         fontSize = 18,
         gridText = [],
-        gameWorld = [],
-        gridText = [],
-        gameWorld = [];
+        gameWorld;
     canvas.font = 'bold ' + fontSize + 'px monospace';
     canvas.fillStyle = 'black';
     canvas.textAlign = 'center';
