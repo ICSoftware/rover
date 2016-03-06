@@ -79,24 +79,82 @@ window.onload = function () {
         // cause it to leave the playfield.
 
         // !== write robot logic here ==!
-		function incrementPosition(state) {
-			var command = state.command.split('').shift();
-			switch(command){
+	var actionMap = [{
+		o: 'N',
+		l: 'W',
+		r: 'E',
+		f: function(state) {
+			if(!processIsOutOfBounds(state.y + 1,bounds[1])) {
+				state.y++;
 			}
 		}
-
-		function isOutOfBounds(position) {
-			if(scent.x === -1 || scent.x === bounds[0] + 1 ||
-				scent.y === -1 || scent.y === bounds[1] + 1) {
-
-				return true;
+	}, {
+		o: 'S',
+		l: 'E',
+		r: 'W',
+		f: function(state) {
+			if(!processIsOutOfBounds(state.y - 1,bounds[1])) {
+				state.y--;
 			}
+		}
+	}, {
+		o: 'E',
+		l: 'N',
+		r: 'S',
+		f: function(state) {
+			if(!processIsOutOfBounds(state.x + 1,bounds[0])) {
+				state.x++;
+			}
+		}
+	}, {
+		o: 'W',
+		l: 'S',
+		r: 'N',
+		f: function(state) {
+			if(!processIsOutOfBounds(state.x - 1,bounds[0])) {
+				state.x--;
+			}
+		}
+	}];
 
-			return false;
+	function processIsOutOfBounds(coordinateValue,boundsValue) {
+		if(coordinateValue < 0 || coordinateValue > boundsValue) {
+			state.scent = true;
 		}
 
-		robos.forEach(function(value,index,array) {
+		return state.scent;
+	}
+
+	function processCommand(state,scents) {
+		if(state.scent) {
+			delete state.command;
+			return;
+		}
+
+		var commands = state.command.split('');
+		var actionItem = actionMap.find(function(item) {
+			return item.o === state.o;
 		});
+
+		if(commands[0] !== 'f') {
+			state.o = actionItem[commands[0]];
+			commands.shift();
+			state.command = commands.join();
+			processCommand(state,scents);
+			return;
+		}
+
+		actionItem.f(state);
+		processCommand(state,scents);
+	}
+
+	robos.forEach(function(value,index,array) {
+		var scents = array.filter(function(item) {
+			return item.scent;
+		});
+
+		return processCommand(value,scents);
+	});
 
         //leave the below line in place
         placeRobos(robos);
