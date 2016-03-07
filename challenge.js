@@ -40,7 +40,7 @@ window.onload = function () {
 
         return parsed;
     };
-    // this function replaces teh robos after they complete one instruction
+	// this function replaces teh robos after they complete one instruction
     // from their commandset
     var tickRobos = function (robos,bounds) {
         // task #2
@@ -59,91 +59,99 @@ window.onload = function () {
         // cause it to leave the playfield.
 
         // !== write robot logic here ==!
-		var actionMap = [{
-			o: 'N',
-			l: 'W',
-			r: 'E',
-			moveAndCheckInbounds: function(state) {
-				if(isOutOfBounds(state.y + 1,bounds[1])) {
-					return false;
-				}
+		var scents = robos.filter(function(item) {
+			return item.scent;
+		});
 
-				state.y++;
-				return true;
-			}
-		}, {
-			o: 'S',
-			l: 'E',
-			r: 'W',
-			moveAndCheckInbounds: function(state) {
-				if(isOutOfBounds(state.y - 1,bounds[1])) {
-					return false;
-				}
+		var actionMap = getActionMap();
 
-				state.y--;
-				return true;
-			}
-		}, {
-			o: 'E',
-			l: 'N',
-			r: 'S',
-			moveAndCheckInbounds: function(state) {
-				if(isOutOfBounds(state.x + 1,bounds[0])) {
-					return false;
-				}
+		robos.forEach(function(bot,index) {
+			if(bot.scent || bot.command.length === 0) return;
 
-				state.x++;
-				return true;
-			}
-		}, {
-			o: 'W',
-			l: 'S',
-			r: 'N',
-			moveAndCheckInbounds: function(state) {
-				if(isOutOfBounds(state.x - 1,bounds[0])) {
-					return false;
-				}
+			var currentCommand = bot.command.substr(0,1);
+			var actionItem = actionMap.filter(function(item) { // find not always supported
+				return item.o === bot.o;
+			})[0];
 
-				state.x--;
-				return true;
+			bot.command = bot.command.substr(1);
+
+			if(currentCommand !== 'f') {
+				bot.o = actionItem[currentCommand];
+			} else if(actionItem.moveAndCheckIfLost(bot)) {
+				bot.scent = true;
 			}
-		}];
+console.log(index,bot);
+		});
+
+        //leave the below line in place
+        placeRobos(robos);
+
+		///////////////
+		function getActionMap() {
+			return [{
+				o: 'N',
+				l: 'W',
+				r: 'E',
+				moveAndCheckIfLost: function(state) {
+					if(isCommandInScents(state)) {
+						console.log('scent');
+						return false;
+					}
+
+					state.y++;
+					return isOutOfBounds(state.y,bounds[1]);
+				}
+			}, {
+				o: 'S',
+				l: 'E',
+				r: 'W',
+				moveAndCheckIfLost: function(state) {
+					if(isCommandInScents(state)) {
+						console.log('scent');
+						return false;
+					}
+
+					state.y--;
+					return isOutOfBounds(state.y,bounds[1]);
+				}
+			}, {
+				o: 'E',
+				l: 'N',
+				r: 'S',
+				moveAndCheckIfLost: function(state) {
+					if(isCommandInScents(state)) {
+						console.log('scent');
+						return false;
+					}
+
+					state.x++;
+					return isOutOfBounds(state.x,bounds[0]);
+				}
+			}, {
+				o: 'W',
+				l: 'S',
+				r: 'N',
+				moveAndCheckIfLost: function(state) {
+					if(isCommandInScents(state)) {
+						console.log('scent');
+						return false;
+					}
+
+					state.x--;
+					return isOutOfBounds(state.x,bounds[0]);
+				}
+			}];
+		}
 
 		function isOutOfBounds(coordinateValue,boundsValue) {
 			return coordinateValue < 0 || coordinateValue > boundsValue;
 		}
 
-		function processCommands(state,scents) {
-			var commands = state.command.split('');
-			var actionItem = actionMap.find(function(item) {
-				return item.o === state.o;
-			});
-
-			if(commands[0] === 'f') {
-				if(!actionItem.moveAndCheckInbounds(state)) {
-					delete state.command;
-					return false;
-				}
-			} else {
-				state.o = actionItem[commands[0]];
-			}
-
-			commands.shift();
-			state.command = commands.join('');
-
-			return state.command.length > 0;
+		function isCommandInScents(state) {
+			return scents.filter(function(i) { // find not always supported
+				return state.o === i.o && state.x === i.x && state.y === i.y;
+			}).length > 0;
 		}
-
-		robos.forEach(function(value,index,array) {
-			var scents = array.filter(function(item) {
-				return item.command === undefined;
-			});
-
-			while(processCommands(value,scents)) {}
-		});
-
-        //leave the below line in place
-        placeRobos(robos);
     };
     // mission summary function
     var missionSummary = function (robos) {
