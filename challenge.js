@@ -40,6 +40,7 @@ window.onload = function () {
 
         return parsed;
     };
+	var lostRobos = [];
 	// this function replaces teh robos after they complete one instruction
     // from their commandset
     var tickRobos = function (robos,bounds) {
@@ -65,8 +66,8 @@ window.onload = function () {
 
 		var actionMap = getActionMap();
 
-		robos.forEach(function(bot,index) {
-			if(bot.scent || bot.command.length === 0) return;
+		robos.forEach(function(bot,index,array) {
+			if(bot.command.length === 0) return;
 
 			var currentCommand = bot.command.substr(0,1);
 			var actionItem = actionMap.filter(function(item) { // find not always supported
@@ -78,9 +79,9 @@ window.onload = function () {
 			if(currentCommand !== 'f') {
 				bot.o = actionItem[currentCommand];
 			} else if(actionItem.moveAndCheckIfLost(bot)) {
-				bot.scent = true;
+				lostRobos.push(Object.create(bot)); // assign not always available
+				array.splice(index,1);
 			}
-console.log(index,bot);
 		});
 
         //leave the below line in place
