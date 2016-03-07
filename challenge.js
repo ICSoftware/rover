@@ -40,10 +40,9 @@ window.onload = function () {
 
         return parsed;
     };
-	var lostRobos = [];
 	// this function replaces teh robos after they complete one instruction
     // from their commandset
-    var tickRobos = function (robos,bounds) {
+    var tickRobos = function (robos) {
         // task #2
         // in this function, write business logic to move robots around the playfield
         // the 'robos' input is an array of objects; each object has 4 parameters.
@@ -60,10 +59,6 @@ window.onload = function () {
         // cause it to leave the playfield.
 
         // !== write robot logic here ==!
-		var scents = robos.filter(function(item) {
-			return item.scent;
-		});
-
 		var actionMap = getActionMap();
 
 		robos.forEach(function(bot,index,array) {
@@ -78,14 +73,20 @@ window.onload = function () {
 
 			if(currentCommand !== 'f') {
 				bot.o = actionItem[currentCommand];
-			} else if(actionItem.moveAndCheckIfLost(bot)) {
-				lostRobos.push(Object.create(bot)); // assign not always available
-				array.splice(index,1);
+			} else if(!isCommandInScents(bot)) {
+				if(actionItem.moveAndCheckIfLost(bot)) {
+					lostRobos.push(Object.create(bot)); // assign not always available
+					array.splice(index,1);
+				}
 			}
 		});
 
         //leave the below line in place
         placeRobos(robos);
+
+		if(!summarized && (robos.length === 0 || robos.filter(function(i) { return i.command.length > 0; }).length === 0)) {
+			summarized = missionSummary(robos);
+		}
 
 		///////////////
 		function getActionMap() {
@@ -94,11 +95,6 @@ window.onload = function () {
 				l: 'W',
 				r: 'E',
 				moveAndCheckIfLost: function(state) {
-					if(isCommandInScents(state)) {
-						console.log('scent');
-						return false;
-					}
-
 					state.y++;
 					return isOutOfBounds(state.y,bounds[1]);
 				}
@@ -107,11 +103,6 @@ window.onload = function () {
 				l: 'E',
 				r: 'W',
 				moveAndCheckIfLost: function(state) {
-					if(isCommandInScents(state)) {
-						console.log('scent');
-						return false;
-					}
-
 					state.y--;
 					return isOutOfBounds(state.y,bounds[1]);
 				}
@@ -120,11 +111,6 @@ window.onload = function () {
 				l: 'N',
 				r: 'S',
 				moveAndCheckIfLost: function(state) {
-					if(isCommandInScents(state)) {
-						console.log('scent');
-						return false;
-					}
-
 					state.x++;
 					return isOutOfBounds(state.x,bounds[0]);
 				}
@@ -133,11 +119,6 @@ window.onload = function () {
 				l: 'S',
 				r: 'N',
 				moveAndCheckIfLost: function(state) {
-					if(isCommandInScents(state)) {
-						console.log('scent');
-						return false;
-					}
-
 					state.x--;
 					return isOutOfBounds(state.x,bounds[0]);
 				}
@@ -149,7 +130,7 @@ window.onload = function () {
 		}
 
 		function isCommandInScents(state) {
-			return scents.filter(function(i) { // find not always supported
+			return lostRobos.filter(function(i) { // find not always supported
 				return state.o === i.o && state.x === i.x && state.y === i.y;
 			}).length > 0;
 		}
@@ -158,6 +139,45 @@ window.onload = function () {
     var missionSummary = function (robos) {
         // task #3
         // summarize the mission and inject the results into the DOM elements referenced in readme.md
+	var frag = document.createDocumentFragment();
+	robos.forEach(function(i) {
+		var li = document.createElement('li');
+		var content = 'Position: ' + i.x + ', ' + i.y + ' | Orientation: ' + i.o;
+		li.textContent = content;
+		frag.appendChild(li);
+	});
+
+	document.getElementById('robots').appendChild(frag);
+
+	frag = document.createDocumentFragment();
+	lostRobos.forEach(function(i) {
+		var li = document.createElement('li');
+		var content = 'Position: ' + i.x + ', ' + i.y + ' | Orientation: ' + i.o;
+		li.textContent = content + ' | ' + createKillerInstruction(i);
+		frag.appendChild(li);
+	});
+
+	function createKillerInstruction(state) {
+		var liveState = Object.create(state);
+		switch(state.o){
+			case 'N':
+				liveState.y--;
+				break;
+			case 'S':
+				liveState.y++;
+				break;
+			case 'E':
+				liveState.x--;
+				break;
+			case 'W':
+				liveState.x++;
+		}
+		return 'Killer Instruction: { ' +
+			'Position: ' + liveState.x + ', ' + liveState.y + ' | Orientation: ' + liveState.o + ' | Command: f }';
+	}
+
+	document.getElementById('lostRobots').appendChild(frag);
+	return true;
     };
     // ~~~~~~!!!! please do not edit any code below this comment !!!!!!~~~~~~~;
     var canvas = document.getElementById('playfield')
@@ -168,15 +188,19 @@ window.onload = function () {
         .height * 2,
         fontSize = 18,
         gridText = [],
-        gameWorld;
+        gameWorld,
+	bounds,
+	lostRobos = [],
+	summarized = false;
+
     canvas.font = 'bold ' + fontSize + 'px monospace';
     canvas.fillStyle = 'black';
     canvas.textAlign = 'center';
     var genworld = function (parsedCommand) {
         //build init world array
         gameWorld = [];
-        var bounds = parsedCommand.bounds,
-            robos = parsedCommand.robos;
+        bounds = parsedCommand.bounds;
+        var robos = parsedCommand.robos;
         var row = [];
         for (var i = 0; i < bounds[0]; i++) {
             row.push('.');
@@ -187,7 +211,7 @@ window.onload = function () {
         }
         placeRobos(parsedCommand.robos);
         render(gameWorld, parsedCommand.robos);
-        tickRobos(robos,bounds);
+        tickRobos(robos);
         window.setTimeout(function () {
             genworld(parsedCommand);
         }, 1000);
