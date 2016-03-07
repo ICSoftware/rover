@@ -40,6 +40,9 @@ window.onload = function () {
 
         return parsed;
     };
+	var lostRobos = [],
+		summarized = false;
+
 	// this function replaces teh robos after they complete one instruction
     // from their commandset
     var tickRobos = function (robos) {
@@ -74,7 +77,8 @@ window.onload = function () {
 		if(currentCommand !== 'f') {
 			bot.o = actionItem[currentCommand];
 		} else if(!isCommandInScents(bot)) {
-			if(actionItem.moveAndCheckIfLost(bot)) {
+			var positionValues = actionItem.moveAndReturnCheckObj(bot);
+			if(positionValues.coord < 0 || positionValues.coord > positionValues.bound) {
 				lostRobos.push(Object.create(bot)); // assign not always available
 				array.splice(index,1);
 			}
@@ -94,39 +98,47 @@ window.onload = function () {
 			o: 'N',
 			l: 'W',
 			r: 'E',
-			moveAndCheckIfLost: function(state) {
+			moveAndReturnCheckObj: function(state) {
 				state.y++;
-				return isOutOfBounds(state.y,bounds[1]);
+				return {
+					coord:state.y,
+					bound: bounds[1]
+				};
 			}
 		}, {
 			o: 'S',
 			l: 'E',
 			r: 'W',
-			moveAndCheckIfLost: function(state) {
+			moveAndReturnCheckObj: function(state) {
 				state.y--;
-				return isOutOfBounds(state.y,bounds[1]);
+				return {
+					coord:state.y,
+					bound: bounds[1]
+				};
 			}
 		}, {
 			o: 'E',
 			l: 'N',
 			r: 'S',
-			moveAndCheckIfLost: function(state) {
+			moveAndReturnCheckObj: function(state) {
 				state.x++;
-				return isOutOfBounds(state.x,bounds[0]);
+				return {
+					coord:state.x,
+					bound: bounds[0]
+				};
 			}
 		}, {
 			o: 'W',
 			l: 'S',
 			r: 'N',
-			moveAndCheckIfLost: function(state) {
+			moveAndReturnCheckObj: function(state) {
 				state.x--;
-				return isOutOfBounds(state.x,bounds[0]);
+				return {
+					coord:state.x,
+					bound: bounds[0]
+				};
 			}
 		}];
-	}
-
-	function isOutOfBounds(coordinateValue,boundsValue) {
-		return coordinateValue < 0 || coordinateValue > boundsValue;
 	}
 
 	function isCommandInScents(state) {
@@ -172,8 +184,8 @@ window.onload = function () {
 			case 'W':
 				liveState.x++;
 		}
-		return 'Killer Instruction: { ' +
-			'Position: ' + liveState.x + ', ' + liveState.y + ' | Orientation: ' + liveState.o + ' | Command: f }';
+		return 'Killer Instruction - ' +
+			'Position: ' + liveState.x + ', ' + liveState.y + ' | Orientation: ' + liveState.o + ' | Command: f ';
 	}
 
 	document.getElementById('lostRobots').appendChild(frag);
@@ -189,9 +201,7 @@ window.onload = function () {
         fontSize = 18,
         gridText = [],
         gameWorld,
-	bounds,
-	lostRobos = [],
-	summarized = false;
+	bounds;
 
     canvas.font = 'bold ' + fontSize + 'px monospace';
     canvas.fillStyle = 'black';
