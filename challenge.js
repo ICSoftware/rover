@@ -12,31 +12,31 @@ window.onload = function () {
         // x,y coordinates of a robot and o is a string representing their orientation. a sample object is provided below
         var parsed = {};
 
-		var splitInput = input.split('\n');
+	var splitInput = input.split('\n');
 
-		//bounds
-		parsed.bounds = splitInput
-			.shift()
-			.trim()
-			.split(' ')
-			.map(function(value) {
-			  return Number.parseInt(value, 10);
-			});
-
-		//robos
-		parsed.robos = [];
-		splitInput.forEach(function(value,index) {
-			if(index % 2 === 0) {
-			  var splitValue = value.trim().split(' ');
-			  parsed.robos.push({
-				x: Number.parseInt(splitValue[0], 10),
-				y: Number.parseInt(splitValue[1], 10),
-				o: splitValue[2].toUpperCase(),
-			  });
-			} else {
-			  parsed.robos[parsed.robos.length-1].command = value.trim().toLowerCase();
-			}
+	//bounds
+	parsed.bounds = splitInput
+		.shift()
+		.trim()
+		.split(' ')
+		.map(function(value) {
+		  return Number.parseInt(value, 10);
 		});
+
+	//robos
+	parsed.robos = [];
+	splitInput.forEach(function(value,index) {
+		if(index % 2 === 0) {
+		  var splitValue = value.trim().split(' ');
+		  parsed.robos.push({
+			x: Number.parseInt(splitValue[0], 10),
+			y: Number.parseInt(splitValue[1], 10),
+			o: splitValue[2].toUpperCase(),
+		  });
+		} else {
+		  parsed.robos[parsed.robos.length-1].command = value.trim().toLowerCase();
+		}
+	});
 
         return parsed;
     };
@@ -59,81 +59,81 @@ window.onload = function () {
         // cause it to leave the playfield.
 
         // !== write robot logic here ==!
-		var actionMap = getActionMap();
+	var actionMap = getActionMap();
 
-		robos.forEach(function(bot,index,array) {
-			if(bot.command.length === 0) return;
+	robos.forEach(function(bot,index,array) {
+		if(bot.command.length === 0) return;
 
-			var currentCommand = bot.command.substr(0,1);
-			var actionItem = actionMap.filter(function(item) { // find not always supported
-				return item.o === bot.o;
-			})[0];
+		var currentCommand = bot.command.substr(0,1);
+		var actionItem = actionMap.filter(function(item) { // find not always supported
+			return item.o === bot.o;
+		})[0];
 
-			bot.command = bot.command.substr(1);
+		bot.command = bot.command.substr(1);
 
-			if(currentCommand !== 'f') {
-				bot.o = actionItem[currentCommand];
-			} else if(!isCommandInScents(bot)) {
-				if(actionItem.moveAndCheckIfLost(bot)) {
-					lostRobos.push(Object.create(bot)); // assign not always available
-					array.splice(index,1);
-				}
+		if(currentCommand !== 'f') {
+			bot.o = actionItem[currentCommand];
+		} else if(!isCommandInScents(bot)) {
+			if(actionItem.moveAndCheckIfLost(bot)) {
+				lostRobos.push(Object.create(bot)); // assign not always available
+				array.splice(index,1);
 			}
-		});
+		}
+	});
 
         //leave the below line in place
         placeRobos(robos);
 
-		if(!summarized && (robos.length === 0 || robos.filter(function(i) { return i.command.length > 0; }).length === 0)) {
-			summarized = missionSummary(robos);
-		}
+	if(!summarized && (robos.length === 0 || robos.filter(function(i) { return i.command.length > 0; }).length === 0)) {
+		summarized = missionSummary(robos);
+	}
 
-		///////////////
-		function getActionMap() {
-			return [{
-				o: 'N',
-				l: 'W',
-				r: 'E',
-				moveAndCheckIfLost: function(state) {
-					state.y++;
-					return isOutOfBounds(state.y,bounds[1]);
-				}
-			}, {
-				o: 'S',
-				l: 'E',
-				r: 'W',
-				moveAndCheckIfLost: function(state) {
-					state.y--;
-					return isOutOfBounds(state.y,bounds[1]);
-				}
-			}, {
-				o: 'E',
-				l: 'N',
-				r: 'S',
-				moveAndCheckIfLost: function(state) {
-					state.x++;
-					return isOutOfBounds(state.x,bounds[0]);
-				}
-			}, {
-				o: 'W',
-				l: 'S',
-				r: 'N',
-				moveAndCheckIfLost: function(state) {
-					state.x--;
-					return isOutOfBounds(state.x,bounds[0]);
-				}
-			}];
-		}
+	///////////////
+	function getActionMap() {
+		return [{
+			o: 'N',
+			l: 'W',
+			r: 'E',
+			moveAndCheckIfLost: function(state) {
+				state.y++;
+				return isOutOfBounds(state.y,bounds[1]);
+			}
+		}, {
+			o: 'S',
+			l: 'E',
+			r: 'W',
+			moveAndCheckIfLost: function(state) {
+				state.y--;
+				return isOutOfBounds(state.y,bounds[1]);
+			}
+		}, {
+			o: 'E',
+			l: 'N',
+			r: 'S',
+			moveAndCheckIfLost: function(state) {
+				state.x++;
+				return isOutOfBounds(state.x,bounds[0]);
+			}
+		}, {
+			o: 'W',
+			l: 'S',
+			r: 'N',
+			moveAndCheckIfLost: function(state) {
+				state.x--;
+				return isOutOfBounds(state.x,bounds[0]);
+			}
+		}];
+	}
 
-		function isOutOfBounds(coordinateValue,boundsValue) {
-			return coordinateValue < 0 || coordinateValue > boundsValue;
-		}
+	function isOutOfBounds(coordinateValue,boundsValue) {
+		return coordinateValue < 0 || coordinateValue > boundsValue;
+	}
 
-		function isCommandInScents(state) {
-			return lostRobos.filter(function(i) { // find not always supported
-				return state.o === i.o && state.x === i.x && state.y === i.y;
-			}).length > 0;
-		}
+	function isCommandInScents(state) {
+		return lostRobos.filter(function(i) { // find not always supported
+			return state.o === i.o && state.x === i.x && state.y === i.y;
+		}).length > 0;
+	}
     };
     // mission summary function
     var missionSummary = function (robos) {
