@@ -10,28 +10,40 @@ window.onload = function () {
         // genworld expects an input object in the form { 'bounds': [3, 8], 'robos': [{x: 2, y: 1, o: 'W', command: 'rlrlff'}]}
         // where bounds represents the top right corner of the plane and each robos object represents the
         // x,y coordinates of a robot and o is a string representing their orientation. a sample object is provided below
-        var parsed = {
-            bounds: [20, 20],
-            robos: [{
-                x: 2,
-                y: 1,
-                o: 'W',
-                command: 'rlrlrff'
-            }, {
-                x: 12,
-                y: 10,
-                o: 'E',
-                command: 'fffffffffff'
-            }, {
-                x: 18,
-                y: 8,
-                o: 'N',
-                command: 'frlrlrlr'
-            }]
-        };
+        var parsed = {};
+
+	var splitInput = input.split('\n');
+
+	//bounds
+	parsed.bounds = splitInput
+		.shift()
+		.trim()
+		.split(' ')
+		.map(function(value) {
+		  return Number.parseInt(value, 10);
+		});
+
+	//robos
+	parsed.robos = [];
+	splitInput.forEach(function(value,index) {
+		if(index % 2 === 0) {
+		  var splitValue = value.trim().split(' ');
+		  parsed.robos.push({
+			x: Number.parseInt(splitValue[0], 10),
+			y: Number.parseInt(splitValue[1], 10),
+			o: splitValue[2].toUpperCase(),
+		  });
+		} else {
+		  parsed.robos[parsed.robos.length-1].command = value.trim().toLowerCase();
+		}
+	});
+
         return parsed;
     };
-    // this function replaces teh robos after they complete one instruction
+	var lostRobos = [],
+		summarized = false;
+
+	// this function replaces teh robos after they complete one instruction
     // from their commandset
     var tickRobos = function (robos) {
         // task #2
@@ -50,14 +62,134 @@ window.onload = function () {
         // cause it to leave the playfield.
 
         // !== write robot logic here ==!
+	var actionMap = getActionMap();
+
+	robos.forEach(function(bot,index,array) {
+		if(bot.command.length === 0) return;
+
+		var currentCommand = bot.command.substr(0,1);
+		var actionItem = actionMap.filter(function(item) { // find not always supported
+			return item.o === bot.o;
+		})[0];
+
+		bot.command = bot.command.substr(1);
+
+		if(currentCommand !== 'f') {
+			bot.o = actionItem[currentCommand];
+		} else if(!isCommandInScents(bot)) {
+			var positionValues = actionItem.moveAndReturnCheckObj(bot);
+			if(positionValues.coord < 0 || positionValues.coord > positionValues.bound) {
+				lostRobos.push(Object.create(bot)); // assign not always available
+				array.splice(index,1);
+			}
+		}
+	});
 
         //leave the below line in place
         placeRobos(robos);
+
+	if(!summarized && (robos.length === 0 || robos.filter(function(i) { return i.command.length > 0; }).length === 0)) {
+		summarized = missionSummary(robos);
+	}
+
+	///////////////
+	function getActionMap() {
+		return [{
+			o: 'N',
+			l: 'W',
+			r: 'E',
+			moveAndReturnCheckObj: function(state) {
+				state.y++;
+				return {
+					coord:state.y,
+					bound: bounds[1]
+				};
+			}
+		}, {
+			o: 'S',
+			l: 'E',
+			r: 'W',
+			moveAndReturnCheckObj: function(state) {
+				state.y--;
+				return {
+					coord:state.y,
+					bound: bounds[1]
+				};
+			}
+		}, {
+			o: 'E',
+			l: 'N',
+			r: 'S',
+			moveAndReturnCheckObj: function(state) {
+				state.x++;
+				return {
+					coord:state.x,
+					bound: bounds[0]
+				};
+			}
+		}, {
+			o: 'W',
+			l: 'S',
+			r: 'N',
+			moveAndReturnCheckObj: function(state) {
+				state.x--;
+				return {
+					coord:state.x,
+					bound: bounds[0]
+				};
+			}
+		}];
+	}
+
+	function isCommandInScents(state) {
+		return lostRobos.filter(function(i) { // find not always supported
+			return state.o === i.o && state.x === i.x && state.y === i.y;
+		}).length > 0;
+	}
     };
     // mission summary function
     var missionSummary = function (robos) {
         // task #3
         // summarize the mission and inject the results into the DOM elements referenced in readme.md
+	var frag = document.createDocumentFragment();
+	robos.forEach(function(i) {
+		var li = document.createElement('li');
+		var content = 'Position: ' + i.x + ', ' + i.y + ' | Orientation: ' + i.o;
+		li.textContent = content;
+		frag.appendChild(li);
+	});
+
+	document.getElementById('robots').appendChild(frag);
+
+	frag = document.createDocumentFragment();
+	lostRobos.forEach(function(i) {
+		var li = document.createElement('li');
+		var content = 'Position: ' + i.x + ', ' + i.y + ' | Orientation: ' + i.o;
+		li.textContent = content + ' | ' + createKillerInstruction(i);
+		frag.appendChild(li);
+	});
+
+	function createKillerInstruction(state) {
+		var liveState = Object.create(state);
+		switch(state.o){
+			case 'N':
+				liveState.y--;
+				break;
+			case 'S':
+				liveState.y++;
+				break;
+			case 'E':
+				liveState.x--;
+				break;
+			case 'W':
+				liveState.x++;
+		}
+		return 'Killer Instruction - ' +
+			'Position: ' + liveState.x + ', ' + liveState.y + ' | Orientation: ' + liveState.o + ' | Command: f ';
+	}
+
+	document.getElementById('lostRobots').appendChild(frag);
+	return true;
     };
     // ~~~~~~!!!! please do not edit any code below this comment !!!!!!~~~~~~~;
     var canvas = document.getElementById('playfield')
@@ -68,17 +200,17 @@ window.onload = function () {
         .height * 2,
         fontSize = 18,
         gridText = [],
-        gameWorld = [],
-        gridText = [],
-        gameWorld = [];
+        gameWorld,
+	bounds;
+
     canvas.font = 'bold ' + fontSize + 'px monospace';
     canvas.fillStyle = 'black';
     canvas.textAlign = 'center';
     var genworld = function (parsedCommand) {
         //build init world array
         gameWorld = [];
-        var bounds = parsedCommand.bounds,
-            robos = parsedCommand.robos;
+        bounds = parsedCommand.bounds;
+        var robos = parsedCommand.robos;
         var row = [];
         for (var i = 0; i < bounds[0]; i++) {
             row.push('.');
@@ -114,4 +246,3 @@ window.onload = function () {
     // wireup init functions for display
     genworld(parseInput(command));
 };
-
