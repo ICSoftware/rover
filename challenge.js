@@ -10,59 +10,39 @@ window.onload = function () {
         // genworld expects an input object in the form { 'bounds': [3, 8], 'robos': [{x: 2, y: 1, o: 'W', command: 'rlrlff'}]}
         // where bounds represents the top right corner of the plane and each robos object represents the
         // x,y coordinates of a robot and o is a string representing their orientation. a sample object is provided below
-        var parsed = {
-            bounds: [20, 20],
-            robos: [{
-                x: 2,
-                y: 1,
-                o: 'W',
-                command: 'rlrlrff'
-            }, {
-                x: 12,
-                y: 10,
-                o: 'E',
-                command: 'fffffffffff'
-            }, {
-                x: 18,
-                y: 8,
-                o: 'N',
-                command: 'frlrlrlr'
-            }]
-        };
+        var parsed = {};
 
-        if(input) {
-          var splitInput = input.split('\n');
+		var splitInput = input.split('\n');
 
-          //bounds
-          parsed.bounds = splitInput
-            .shift()
-            .trim()
-            .split(' ')
-            .map(function(value) {
-              return Number.parseInt(value, 10);
-            });
+		//bounds
+		parsed.bounds = splitInput
+			.shift()
+			.trim()
+			.split(' ')
+			.map(function(value) {
+			  return Number.parseInt(value, 10);
+			});
 
-          //robos
-          parsed.robos = [];
-          splitInput.forEach(function(value,index) {
-            if(index % 2 === 0) {
-              var splitValue = value.trim().split(' ');
-              parsed.robos.push({
-                x: Number.parseInt(splitValue[0], 10),
-                y: Number.parseInt(splitValue[1], 10),
-                o: splitValue[2].toUpperCase(),
-              });
-            } else {
-              parsed.robos[parsed.robos.length-1].command = value.trim().toLowerCase();
-            }
-          });
-        }
+		//robos
+		parsed.robos = [];
+		splitInput.forEach(function(value,index) {
+			if(index % 2 === 0) {
+			  var splitValue = value.trim().split(' ');
+			  parsed.robos.push({
+				x: Number.parseInt(splitValue[0], 10),
+				y: Number.parseInt(splitValue[1], 10),
+				o: splitValue[2].toUpperCase(),
+			  });
+			} else {
+			  parsed.robos[parsed.robos.length-1].command = value.trim().toLowerCase();
+			}
+		});
 
         return parsed;
     };
     // this function replaces teh robos after they complete one instruction
     // from their commandset
-    var tickRobos = function (robos) {
+    var tickRobos = function (robos,bounds) {
         // task #2
         // in this function, write business logic to move robots around the playfield
         // the 'robos' input is an array of objects; each object has 4 parameters.
@@ -79,82 +59,88 @@ window.onload = function () {
         // cause it to leave the playfield.
 
         // !== write robot logic here ==!
-	var actionMap = [{
-		o: 'N',
-		l: 'W',
-		r: 'E',
-		f: function(state) {
-			if(!processIsOutOfBounds(state.y + 1,bounds[1])) {
+		var actionMap = [{
+			o: 'N',
+			l: 'W',
+			r: 'E',
+			moveAndCheckInbounds: function(state) {
+				if(isOutOfBounds(state.y + 1,bounds[1])) {
+					return false;
+				}
+
 				state.y++;
+				return true;
 			}
-		}
-	}, {
-		o: 'S',
-		l: 'E',
-		r: 'W',
-		f: function(state) {
-			if(!processIsOutOfBounds(state.y - 1,bounds[1])) {
+		}, {
+			o: 'S',
+			l: 'E',
+			r: 'W',
+			moveAndCheckInbounds: function(state) {
+				if(isOutOfBounds(state.y - 1,bounds[1])) {
+					return false;
+				}
+
 				state.y--;
+				return true;
 			}
-		}
-	}, {
-		o: 'E',
-		l: 'N',
-		r: 'S',
-		f: function(state) {
-			if(!processIsOutOfBounds(state.x + 1,bounds[0])) {
+		}, {
+			o: 'E',
+			l: 'N',
+			r: 'S',
+			moveAndCheckInbounds: function(state) {
+				if(isOutOfBounds(state.x + 1,bounds[0])) {
+					return false;
+				}
+
 				state.x++;
+				return true;
 			}
-		}
-	}, {
-		o: 'W',
-		l: 'S',
-		r: 'N',
-		f: function(state) {
-			if(!processIsOutOfBounds(state.x - 1,bounds[0])) {
+		}, {
+			o: 'W',
+			l: 'S',
+			r: 'N',
+			moveAndCheckInbounds: function(state) {
+				if(isOutOfBounds(state.x - 1,bounds[0])) {
+					return false;
+				}
+
 				state.x--;
+				return true;
 			}
-		}
-	}];
+		}];
 
-	function processIsOutOfBounds(coordinateValue,boundsValue) {
-		if(coordinateValue < 0 || coordinateValue > boundsValue) {
-			state.scent = true;
+		function isOutOfBounds(coordinateValue,boundsValue) {
+			return coordinateValue < 0 || coordinateValue > boundsValue;
 		}
 
-		return state.scent;
-	}
+		function processCommands(state,scents) {
+			var commands = state.command.split('');
+			var actionItem = actionMap.find(function(item) {
+				return item.o === state.o;
+			});
 
-	function processCommand(state,scents) {
-		if(state.scent) {
-			delete state.command;
-			return;
-		}
+			if(commands[0] === 'f') {
+				if(!actionItem.moveAndCheckInbounds(state)) {
+					delete state.command;
+					return false;
+				}
+			} else {
+				state.o = actionItem[commands[0]];
+			}
 
-		var commands = state.command.split('');
-		var actionItem = actionMap.find(function(item) {
-			return item.o === state.o;
-		});
-
-		if(commands[0] !== 'f') {
-			state.o = actionItem[commands[0]];
 			commands.shift();
-			state.command = commands.join();
-			processCommand(state,scents);
-			return;
+			state.command = commands.join('');
+
+			return state.command.length > 0;
 		}
 
-		actionItem.f(state);
-		processCommand(state,scents);
-	}
+		robos.forEach(function(value,index,array) {
+			var scents = array.filter(function(item) {
+				return item.command === undefined;
+			});
 
-	robos.forEach(function(value,index,array) {
-		var scents = array.filter(function(item) {
-			return item.scent;
+			while(processCommands(value,scents)) {}
 		});
-
-		return processCommand(value,scents);
-	});
 
         //leave the below line in place
         placeRobos(robos);
@@ -192,7 +178,7 @@ window.onload = function () {
         }
         placeRobos(parsedCommand.robos);
         render(gameWorld, parsedCommand.robos);
-        tickRobos(robos);
+        tickRobos(robos,bounds);
         window.setTimeout(function () {
             genworld(parsedCommand);
         }, 1000);
@@ -217,4 +203,3 @@ window.onload = function () {
     // wireup init functions for display
     genworld(parseInput(command));
 };
-
