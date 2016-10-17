@@ -6,42 +6,29 @@ if (!window) {
 };
 window.initGame = function () {
     console.log('initgame');
-    // you're really better off leaving this line alone, i promise.
+
     var command =
         '5 3 \n 1 1 s\n ffffff\n 2 1 w \n flfffffrrfffffff\n 0 3 w\n LLFFFLFLFL';
+    
+    var mapChunk = function(chunk) {
+        var robo = {}
+        robo.x = Number(chunk[0][0])
+        robo.y = Number(chunk[0][1])
+        robo.o = _.upperCase(chunk[0][2])
+        robo.command = _.lowerCase(chunk[1])
 
-    // this function parses the input string so that we have useful names/parameters
-    // to define the playfield and robots for subsequent steps
+        return robo
+    }
+    
     var parseInput = function (input) {
-        //
-        // task #1 
-        //
-        // replace the 'parsed' var below to be the string 'command' parsed into an object we can pass to genworld();
-        // genworld expects an input object in the form { 'bounds': [3, 8], 'robos': [{x: 2, y: 1, o: 'W', command: 'rlrlff'}]}
-        // where bounds represents the top right corner of the plane and each robos object represents the
-        // x,y coordinates of a robot and o is a string representing their orientation. a sample object is provided below
-        //
+        
+        var tokens = input.replace(/ /g,'').split('\n');
 
-        // replace this with a correct object
-        var parsed = {
-            bounds: [20, 20],
-            robos: [{
-                x: 2,
-                y: 1,
-                o: 'W',
-                command: 'rlrlrff'
-            }, {
-                x: 12,
-                y: 10,
-                o: 'E',
-                command: 'fffffffffff'
-            }, {
-                x: 18,
-                y: 8,
-                o: 'N',
-                command: 'frlrlrlr'
-            }]
-        };
+        var bounds = _.map(tokens.shift().split(''),function(s){return Number(s)})
+
+        var robos = _.map(_.chunk(tokens, 2), mapChunk)
+
+        var parsed = {bounds: bounds, robos: robos}
 
         return parsed;
     };
