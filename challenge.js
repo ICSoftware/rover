@@ -40,10 +40,10 @@ window.initGame = function () {
     
     var tickRobos = function (gameState) {
         console.log('tickrobos');
-        
-        console.log(gameState);
 
-        for (var i = gameState.robos.length; i--;) {
+        console.log(gameState);
+        
+        for (var i = gameState.robos.length-1; i--;) {
             var robo = gameState.robos[i];
             if (robo == undefined) { //we may have removed a robo during the loop
                 continue;

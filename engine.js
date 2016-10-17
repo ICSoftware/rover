@@ -113,7 +113,7 @@ function GameState(robos, bounds) {
 }
 
 GameState.prototype.roboOutOfBounds = function(robo) {
-    return (robo.x <= this.bounds[0] && robo.y <= this.bounds[1]);
+    return !(0 <= robo.x && robo.x <= this.bounds[0] && 0 <= robo.y && robo.y <= this.bounds[1]);
 };
 
 GameState.prototype.addScent = function(robo) {
