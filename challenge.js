@@ -9,7 +9,7 @@ window.initGame = function () {
 
     var command =
         '5 3 \n 1 1 s\n ffffff\n 2 1 w \n flfffffrrfffffff\n 0 3 w\n LLFFFLFLFL';
-    
+
     var mapChunk = function(chunk) {
         var robo = {};
         robo.x = Number(chunk[0][0]);
@@ -41,9 +41,9 @@ window.initGame = function () {
     var tickRobos = function (gameState) {
         console.log('tickrobos');
 
-        console.log(gameState);
+        //console.log(gameState);
         
-        for (var i = gameState.robos.length-1; i--;) {
+        for (var i=0; i<gameState.robos.length; i++) {
             var robo = gameState.robos[i];
             if (robo == undefined) { //we may have removed a robo during the loop
                 continue;
@@ -53,6 +53,7 @@ window.initGame = function () {
             } else {
                 robo.doCommand();
                 if (gameState.roboOutOfBounds(robo)) {
+                    console.log(robo)
                     gameState.addScent(robo);
                     gameState.removeRobo(i);
                 }

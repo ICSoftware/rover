@@ -54,6 +54,7 @@ window.onload = function () {
         if (renderflag) {
             window.setTimeout(function () {
                 var finished = false;
+                console.log(gameState.robos);
                 _.each(gameState.robos, function (robo) {
                     if (robo.command.length !== 0 && finished === false) {
                         finished = true;
@@ -65,7 +66,7 @@ window.onload = function () {
                 } else {
                     genworld(gameState, true);
                 }
-            }, 124);
+            }, 1000);
         }
         return gameWorld;
     };
@@ -117,7 +118,7 @@ GameState.prototype.roboOutOfBounds = function(robo) {
 };
 
 GameState.prototype.addScent = function(robo) {
-    this.scents[String(robo.x) + String(robo.y)] = true;
+    this.scents[String(robo.x) + ',' + String(robo.y)] = true;
 }
 
 GameState.prototype.removeRobo = function(index) {
@@ -198,7 +199,7 @@ Robo.prototype.popCommand = function () {
 
 Robo.prototype.scentDetected = function (scents) {
     var coords = this.calculateForwardCoords();
-    var testCoords = String(coords[0]) + String(coords[1]);
+    var testCoords = String(coords[0]) + ',' +String(coords[1]);
 
     if (_.get(scents, testCoords)) {
         return true;
