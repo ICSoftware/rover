@@ -46,6 +46,7 @@ window.initGame = function () {
             if (robo.scentDetected(gameState.scents) && robo.command[0]=='f') {
                 robo.popCommand();
             } else {
+                robo.updateLastState();
                 robo.doCommand();
                 if (gameState.roboOutOfBounds(robo)) {
                     gameState.addScent(robo);
@@ -60,20 +61,33 @@ window.initGame = function () {
 
     var missionSummary = function (gameState) {
 
-        var robosString = '';
-        var lostRobosString = '';
+        var robotsNode = window.document.getElementById('robots');
+
+        var lostRobotsNode = window.document.getElementById('lostRobots')
+
+        while (robotsNode.firstChild) {
+            robotsNode.removeChild(robotsNode.firstChild);
+        }
 
         _.forEach(gameState.robos, function(robo) {
-            robosString+=robo.toString() + '';
+            var roboString = robo.toString();
+            var li = document.createElement('li');
+            var text = document.createTextNode(roboString);
+            li.appendChild(text);
+            robotsNode.appendChild(li);
         });
+
+        while (lostRobotsNode.firstChild) {
+            lostRobotsNode.removeChild(lostRobotsNode.firstChild);
+        }
 
         _.forEach(gameState.lostRobos, function(robo) {
-            lostRobosString+=robo.toString() + ' ';
+            var lostRoboString = robo.deathMessage();
+            var li = document.createElement('li');
+            var text = document.createTextNode(lostRoboString);
+            li.appendChild(text);
+            lostRobotsNode.appendChild(li);
         });
-
-        window.document.getElementById('robots').innerHTML = robosString;
-        window.document.getElementById('lostRobots').innerHTML = lostRobosString;
-
     };
 
     window.rover = {

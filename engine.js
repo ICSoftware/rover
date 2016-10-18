@@ -121,7 +121,7 @@ GameState.prototype.addScent = function(robo) {
 };
 
 GameState.prototype.removeRobo = function(index) {
-    this.lostRobos.push(this.robos.splice(index, index+1));
+    this.lostRobos.push(this.robos.splice(index, index+1)[0]);
 };
 
 
@@ -135,6 +135,7 @@ function Robo(robo) {
     this.y = robo.y;
     this.o = robo.o;
     this.command = robo.command;
+    this.lastState = {};
 }
 
 Robo.prototype.rotate = function(shift, bearing) {
@@ -208,5 +209,15 @@ Robo.prototype.scentDetected = function (scents) {
 };
 
 Robo.prototype.toString = function() {
-    return '['+ String(this.x) + ', ' + String(this.y) + ']';
+    return 'Position: ' + String(this.x) + ', ' + String(this.y) + ' | Orientation: ' + _.upperCase(this.o);
 };
+
+Robo.prototype.deathMessage = function() {
+    return 'I died going ' + _.upperCase(this.lastState.o) + ' from coordinates: ' + String(this.lastState.x) + ', ' + String(this.lastState.y);
+};
+
+Robo.prototype.updateLastState = function() {
+    this.lastState.x = this.x;
+    this.lastState.y = this.y;
+    this.lastState.o = this.o;
+}
