@@ -1,3 +1,5 @@
+'use strict';
+
 // don't touch this at all.
 /* globals _ */
 if (!window) {
@@ -20,11 +22,12 @@ window.onload = function () {
     canvas.font = 'bold ' + fontSize + 'px monospace';
     canvas.fillStyle = 'black';
     canvas.textAlign = 'center';
-    var genworld = function (parsedCommand, renderflag, world) {
+    var genworld = function (gameState, renderflag, world) {
         //build init world array
         gameWorld = [];
-        var bounds = parsedCommand.bounds,
-            robos = parsedCommand.robos;
+        var bounds = gameState.bounds,
+            robos = gameState.robos;
+
         var row = [];
         for (var i = 0; i <= bounds[0]; i++) {
             row.push('.');
@@ -42,24 +45,24 @@ window.onload = function () {
                 }
             }
         };
-        parsedCommand.robos = window.rover.tick(robos);
-        placeRobos(parsedCommand.robos);
+        window.rover.tick(gameState);
+        placeRobos(gameState.robos);
         if (renderflag) {
-            render(gameWorld, parsedCommand.robos);
+            render(gameWorld, gameState.robos);
         }
         if (renderflag) {
             window.setTimeout(function () {
                 var finished = false;
-                _.each(parsedCommand.robos, function (robo) {
+                _.each(gameState.robos, function (robo) {
                     if (robo.command.length !== 0 && finished === false) {
                         finished = true;
                     }
                 });
                 if (finished === false) {
-                    window.rover.summary(parsedCommand.robos);
+                    window.rover.summary(gameState);
                     runTests(gameWorld);
                 } else {
-                    genworld(parsedCommand, true);
+                    genworld(gameState, true);
                 }
             }, 124);
         }
@@ -75,7 +78,7 @@ window.onload = function () {
         }
     };
     // test world state for succesful test
-    runTests = function (lastworld) {
+    var runTests = function (lastworld) {
         console.log('runtests: ');
         var successWorld = ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 's', '.', '.', '.', '.', '.', '.', '.', '.', '.'];
         if (!window.doneTrigger) {
@@ -94,6 +97,127 @@ window.onload = function () {
         }
     };
     // wireup init functions for display
-    genworld(window.rover.parse(window.rover.command), true);
+    var command = window.rover.parse(window.rover.command);
+    var gameState = new GameState(command.robos, command.bounds);
+    genworld(gameState, true);
 };
 
+//GameState class
+function GameState(robos, bounds) {
+    this.robos = _.map(robos, function(robo) {
+        return new Robo(robo);
+    });
+    this.bounds = bounds;
+    this.scents = {};
+    this.lostRobos = [];
+}
+
+GameState.prototype.roboOutOfBounds = function(robo) {
+    return !(0 <= robo.x && robo.x <= this.bounds[0] && 0 <= robo.y && robo.y <= this.bounds[1]);
+};
+
+GameState.prototype.addScent = function(robo) {
+    this.scents[String(robo.x) + ',' + String(robo.y)] = true;
+};
+
+GameState.prototype.removeRobo = function(index) {
+    this.lostRobos.push(this.robos.splice(index, index+1)[0]);
+};
+
+
+//Global used in Robo.prototype.rotate
+var bearings = ['n', 'e', 's', 'w'];
+
+
+//Robo class
+function Robo(robo) {
+    this.x = robo.x;
+    this.y = robo.y;
+    this.o = robo.o;
+    this.command = robo.command;
+    this.lastState = {};
+}
+
+Robo.prototype.rotate = function(shift, bearing) {
+    var index = bearings.indexOf(bearing);
+    var shifted = index + shift;
+    return bearings[((shifted%4)+4)%4]; //javascript mod returns negative numbers, need to get positive index
+};
+
+Robo.prototype.moveForward = function() {
+    var coords = this.calculateForwardCoords();
+    this.x = coords[0];
+    this.y = coords[1];
+};
+
+Robo.prototype.calculateForwardCoords = function() {
+    var coords = [];
+    switch(this.o) {
+    case 'n':
+        coords[0] = this.x;
+        coords[1] = this.y-1;
+        return coords;
+        break;
+    case 'e':
+        coords[0] = this.x+1;
+        coords[1] = this.y;
+        return coords;
+        break;
+    case 's':
+        coords[0] = this.x;
+        coords[1] = this.y+1;
+        return coords;
+        break;
+    case 'w':
+        coords[0] = this.x-1;
+        coords[1] = this.y;
+        return coords;
+        break;
+    }
+};
+
+Robo.prototype.doCommand = function () {
+    var command = this.command[0];
+    switch(command) {
+    case 'l':
+        this.o = this.rotate(-1, this.o);
+        break;
+    case 'r':
+        this.o = this.rotate(1, this.o);
+        break;
+    case 'f':
+        this.moveForward();
+        break;
+    }
+
+    this.popCommand();
+};
+
+Robo.prototype.popCommand = function () {
+    this.command = this.command.slice(1);
+};
+
+Robo.prototype.scentDetected = function (scents) {
+    var coords = this.calculateForwardCoords();
+    var testCoords = String(coords[0]) + ',' +String(coords[1]);
+
+    if (_.get(scents, testCoords)) {
+        return true;
+    } else {
+        return false;
+    }
+};
+
+Robo.prototype.toString = function() {
+    return 'Position: ' + String(this.x) + ', ' + String(this.y) + ' | Orientation: ' + _.upperCase(this.o);
+};
+
+Robo.prototype.deathMessage = function() {
+    return 'I died going ' + _.upperCase(this.lastState.o) + ' from coordinates: ' + String(this.lastState.x) + ', ' + String(this.lastState.y);
+};
+
+Robo.prototype.updateLastState = function() {
+    this.lastState.x = this.x;
+    this.lastState.y = this.y;
+    this.lastState.o = this.o;
+}
