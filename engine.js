@@ -45,8 +45,7 @@ window.onload = function () {
                 }
             }
         };
-        gameState = window.rover.tick(gameState);
-        gameState.robos = gameState.robos;
+        window.rover.tick(gameState);
         placeRobos(gameState.robos);
         if (renderflag) {
             render(gameWorld, gameState.robos);
@@ -54,19 +53,18 @@ window.onload = function () {
         if (renderflag) {
             window.setTimeout(function () {
                 var finished = false;
-                console.log(gameState.robos);
                 _.each(gameState.robos, function (robo) {
                     if (robo.command.length !== 0 && finished === false) {
                         finished = true;
                     }
                 });
                 if (finished === false) {
-                    window.rover.summary(gameState.robos);
+                    window.rover.summary(gameState);
                     runTests(gameWorld);
                 } else {
                     genworld(gameState, true);
                 }
-            }, 1000);
+            }, 124);
         }
         return gameWorld;
     };
@@ -111,6 +109,7 @@ function GameState(robos, bounds) {
     });
     this.bounds = bounds;
     this.scents = {};
+    this.lostRobos = [];
 }
 
 GameState.prototype.roboOutOfBounds = function(robo) {
@@ -119,15 +118,15 @@ GameState.prototype.roboOutOfBounds = function(robo) {
 
 GameState.prototype.addScent = function(robo) {
     this.scents[String(robo.x) + ',' + String(robo.y)] = true;
-}
+};
 
 GameState.prototype.removeRobo = function(index) {
-    this.robos = this.robos.splice(index, index+1);
-}
+    this.lostRobos.push(this.robos.splice(index, index+1));
+};
 
 
 //Global used in Robo.prototype.rotate
-var BEARINGS = ['N', 'E', 'S', 'W'];
+var bearings = ['n', 'e', 's', 'w'];
 
 
 //Robo class
@@ -139,9 +138,9 @@ function Robo(robo) {
 }
 
 Robo.prototype.rotate = function(shift, bearing) {
-    var index = BEARINGS.indexOf(bearing);
+    var index = bearings.indexOf(bearing);
     var shifted = index + shift;
-    return BEARINGS[((shifted%4)+4)%4]; //javascript mod returns negative numbers, need to get positive index
+    return bearings[((shifted%4)+4)%4]; //javascript mod returns negative numbers, need to get positive index
 };
 
 Robo.prototype.moveForward = function() {
@@ -153,28 +152,28 @@ Robo.prototype.moveForward = function() {
 Robo.prototype.calculateForwardCoords = function() {
     var coords = [];
     switch(this.o) {
-    case 'N':
+    case 'n':
         coords[0] = this.x;
         coords[1] = this.y-1;
         return coords;
         break;
-    case 'E':
-        coords[0] = this.x-1;
-        coords[1] = this.y;
-        return coords;
-        break;
-    case 'S':
-        coords[0] = this.x;
-        coords[1] = this.y+1;
-        return coords;
-        break;
-    case 'W':
+    case 'e':
         coords[0] = this.x+1;
         coords[1] = this.y;
         return coords;
         break;
+    case 's':
+        coords[0] = this.x;
+        coords[1] = this.y+1;
+        return coords;
+        break;
+    case 'w':
+        coords[0] = this.x-1;
+        coords[1] = this.y;
+        return coords;
+        break;
     }
-}
+};
 
 Robo.prototype.doCommand = function () {
     var command = this.command[0];
@@ -190,12 +189,12 @@ Robo.prototype.doCommand = function () {
         break;
     }
 
-    this.popCommand()
+    this.popCommand();
 };
 
 Robo.prototype.popCommand = function () {
     this.command = this.command.slice(1);
-}
+};
 
 Robo.prototype.scentDetected = function (scents) {
     var coords = this.calculateForwardCoords();
@@ -206,4 +205,8 @@ Robo.prototype.scentDetected = function (scents) {
     } else {
         return false;
     }
-}
+};
+
+Robo.prototype.toString = function() {
+    return '['+ String(this.x) + ', ' + String(this.y) + ']';
+};

@@ -14,7 +14,7 @@ window.initGame = function () {
         var robo = {};
         robo.x = Number(chunk[0][0]);
         robo.y = Number(chunk[0][1]);
-        robo.o = _.upperCase(chunk[0][2]);
+        robo.o = _.lowerCase(chunk[0][2]);
         robo.command = _.lowerCase(chunk[1]);
 
         return robo;
@@ -34,45 +34,48 @@ window.initGame = function () {
 
         return parsed;
     };
-
-    // this function replaces the robos after they complete one instruction
-    // from their commandset
     
     var tickRobos = function (gameState) {
         console.log('tickrobos');
-
-        //console.log(gameState);
         
         for (var i=0; i<gameState.robos.length; i++) {
             var robo = gameState.robos[i];
-            if (robo == undefined) { //we may have removed a robo during the loop
+            if (robo == undefined) {
                 continue;
             }
-            if (robo.scentDetected(gameState.scents)) {
+            if (robo.scentDetected(gameState.scents) && robo.command[0]=='f') {
                 robo.popCommand();
             } else {
                 robo.doCommand();
                 if (gameState.roboOutOfBounds(robo)) {
-                    console.log(robo)
                     gameState.addScent(robo);
                     gameState.removeRobo(i);
                 }
             }
         }
 
-        return gameState;
-    };
-    // mission summary function
-    var missionSummary = function (robos) {
-        //
-        // task #3
-        //
-        // summarize the mission and inject the results into the DOM elements referenced in readme.md
-        //
-        return;
+        missionSummary(gameState);
+
     };
 
-    // leave this alone please
+    var missionSummary = function (gameState) {
+
+        var robosString = '';
+        var lostRobosString = '';
+
+        _.forEach(gameState.robos, function(robo) {
+            robosString+=robo.toString() + '';
+        });
+
+        _.forEach(gameState.lostRobos, function(robo) {
+            lostRobosString+=robo.toString() + ' ';
+        });
+
+        window.document.getElementById('robots').innerHTML = robosString;
+        window.document.getElementById('lostRobots').innerHTML = lostRobosString;
+
+    };
+
     window.rover = {
         parse: parseInput,
         tick: tickRobos,
