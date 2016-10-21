@@ -1,5 +1,6 @@
 'use strict';
 window.onload = function () {
+console.log('test');
     var command =
         '5 3 \n 1 1 e\n rfrfrfrf\n 3 2 N \n frrffllffrrfll\n 0 3 w\n LLFFFLFLFL';
     // this function parses the input string so that we have useful names/parameters
