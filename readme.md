@@ -1,3 +1,10 @@
+# Solution Notes
+
+## The focus was on the algorithms and correctness
+## Ideally we would separate out concerns with an MVC framework like Angular. 
+## Or at least into modules using the module pattern to avoid any globals. 
+## I have tested on Chrome and attached a screenshot of a successful run in the file solution.png in the root directory.
+
 # Rover code challenge
 ## Installation
 Point a webserver at the root of this repo. Visit your local machine in the browser. You should see a grid of dot characters.
