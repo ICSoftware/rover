@@ -1,4 +1,5 @@
 {
+    "parser": "babel-eslint",
     "rules": {
         "indent": [
             2,
@@ -21,7 +22,9 @@
         "no-console": 1
     },
     "env": {
-        "browser": true
+        "browser": true,
+        "node": true,
+        "mocha": true
     },
     "globals": {
         "angular": true

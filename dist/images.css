@@ -1,0 +1,18 @@
+.img-ic_build_black_24px {
+	background: url("images.svg") 0 0 no-repeat;
+}
+
+.img-ic_build_black_24px-dims {
+	width: 24px;
+	height: 24px;
+}
+
+.img-ic_done_black_24px {
+	background: url("images.svg") 100% 0 no-repeat;
+}
+
+.img-ic_done_black_24px-dims {
+	width: 24px;
+	height: 24px;
+}
+

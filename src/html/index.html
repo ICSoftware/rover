@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="images.css">
+    <style type="text/css">
+      .challenge,
+      .meta {
+        width: 40%;
+        float: left;
+      }
+
+      .challenge {
+        margin-left: 10%;
+      }
+
+    </style>
+    <title>Rover Code Challenge</title>
+  </head>
+  <body>
+  <div class="challenge">
+    <h1>Rover Code Challenge</h1>
+    <canvas width="500" height="500" id="playfield"></canvas>
+  </div>
+  <div class="meta">
+    <h1>Test results:</h1>
+    <ul id="test"> </ul>
+    <h1>Remaining robots:</h1>
+    <ul id="robots"></ul>
+    <h1>Lost robots:</h1>
+    <ul id="lostRobots"></ul>
+  </div>
+    <script src="scripts.js"></script>
+  </body>
+</html>
