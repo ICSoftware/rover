@@ -1,9 +1,12 @@
+
 // don't touch this at all.
 /* globals _ */
 if (!window) {
     window = {};
 }
-window.onload = function () {
+
+export function initEngine() {
+//window.onload = function () {
     console.log('onload called');
     window.initGame();
     var canvas = document.getElementById('playfield')
@@ -75,7 +78,7 @@ window.onload = function () {
         }
     };
     // test world state for succesful test
-    runTests = function (lastworld) {
+    var runTests = function (lastworld) {
         console.log('runtests: ');
         var successWorld = ['.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', '.', 's', '.', '.', '.', '.', '.', '.', '.', '.', '.'];
         if (!window.doneTrigger) {
